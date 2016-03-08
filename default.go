@@ -21,6 +21,11 @@ func DefaultLogger() *Logger {
 	return defaultLogger
 }
 
+// Enabled does the same for Logger.Enabled() for the default logger.
+func Enabled(level int) bool {
+	return defaultLogger.Enabled(level)
+}
+
 // Critical outputs a critical log using the default logger.
 // fields can be nil.
 func Critical(msg string, fields map[string]interface{}) error {
