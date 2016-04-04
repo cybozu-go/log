@@ -96,11 +96,11 @@ func logfmt(l *Logger, t time.Time, severity int, msg string,
 		buf = append(buf, byte(' '))
 		buf = append(buf, k...)
 		buf = append(buf, byte('='))
-		if tbuf, err := appendLogfmt(buf, v); err != nil {
+		tbuf, err := appendLogfmt(buf, v)
+		if err != nil {
 			return nil, err
-		} else {
-			buf = tbuf
 		}
+		buf = tbuf
 		if len(buf) > maxLogSize {
 			return nil, ErrTooLarge
 		}
@@ -120,11 +120,11 @@ func logfmt(l *Logger, t time.Time, severity int, msg string,
 		buf = append(buf, byte(' '))
 		buf = append(buf, k...)
 		buf = append(buf, byte('='))
-		if tbuf, err := appendLogfmt(buf, v); err != nil {
+		tbuf, err := appendLogfmt(buf, v)
+		if err != nil {
 			return nil, err
-		} else {
-			buf = tbuf
 		}
+		buf = tbuf
 		if len(buf) > maxLogSize {
 			return nil, ErrTooLarge
 		}

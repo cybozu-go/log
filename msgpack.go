@@ -95,9 +95,8 @@ func appendMsgpack(b []byte, v interface{}) ([]byte, error) {
 	case bool:
 		if t {
 			return append(b, mpTrue), nil
-		} else {
-			return append(b, mpFalse), nil
 		}
+		return append(b, mpFalse), nil
 	case int:
 		return appendMsgpackInt64(b, int64(t)), nil
 	case int64:
@@ -161,96 +160,86 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 	b := l.buffer[:0]
 
 	b = append(b, byte(mpFixArray+3))
-	if b2, err := appendMsgpack(b, l.tag); err != nil {
+	b, err := appendMsgpack(b, l.tag)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
-	if b2, err := appendMsgpack(b, t.Unix()); err != nil {
+	b, err = appendMsgpack(b, t.Unix())
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 
 	// the log record consists of these objects:
 	//     logged_at, severity, utsname, message, objects in fields,
 	//     and objects in l.defaults excluding conflicting keys.
-	var n_fields uint64
-	n_fields += 4
-	for k, _ := range fields {
+	var nFields uint64
+	nFields += 4
+	for k := range fields {
 		if !reservedKey(k) {
-			n_fields += 1
+			nFields++
 		}
 	}
-	for k, _ := range l.defaults {
+	for k := range l.defaults {
 		if reservedKey(k) {
 			continue
 		}
 		if _, ok := fields[k]; ok {
 			continue
 		}
-		n_fields += 1
+		nFields++
 	}
-	if n_fields > math.MaxUint16 {
+	if nFields > math.MaxUint16 {
 		return nil, ErrTooLarge
 	}
 
-	if n_fields <= 15 {
-		b = append(b, byte(mpFixMap+n_fields))
+	if nFields <= 15 {
+		b = append(b, byte(mpFixMap+nFields))
 	} else {
 		b = append(b, byte(mpMap16), 0, 0)
-		binary.BigEndian.PutUint16(b[len(b)-2:], uint16(n_fields))
+		binary.BigEndian.PutUint16(b[len(b)-2:], uint16(nFields))
 	}
 
 	// logged_at
-	if b2, err := appendMsgpack(b, FnLoggedAt); err != nil {
+	b, err = appendMsgpack(b, FnLoggedAt)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
-	if b2, err := appendMsgpack(b, t.UnixNano()/1000); err != nil {
+	b, err = appendMsgpack(b, t.UnixNano()/1000)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 
 	// severity
-	if b2, err := appendMsgpack(b, FnSeverity); err != nil {
+	b, err = appendMsgpack(b, FnSeverity)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
-	if b2, err := appendMsgpack(b, severity); err != nil {
+	b, err = appendMsgpack(b, severity)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 
 	// utsname
-	if b2, err := appendMsgpack(b, FnUtsname); err != nil {
+	b, err = appendMsgpack(b, FnUtsname)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
-	if b2, err := appendMsgpack(b, l.utsname); err != nil {
+	b, err = appendMsgpack(b, l.utsname)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 
-	if b2, err := appendMsgpack(b, FnMessage); err != nil {
+	b, err = appendMsgpack(b, FnMessage)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 	// message
 	if len(b)+len(msg) > maxLogSize {
 		return nil, ErrTooLarge
 	}
-	if b2, err := appendMsgpack(b, msg); err != nil {
+	b, err = appendMsgpack(b, msg)
+	if err != nil {
 		return nil, err
-	} else {
-		b = b2
 	}
 
 	// fields
@@ -265,16 +254,14 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 		if len(b)+len(k) > maxLogSize {
 			return nil, ErrTooLarge
 		}
-		if b2, err := appendMsgpack(b, k); err != nil {
+		b, err = appendMsgpack(b, k)
+		if err != nil {
 			return nil, err
-		} else {
-			b = b2
 		}
 
-		if b2, err := appendMsgpack(b, v); err != nil {
+		b, err = appendMsgpack(b, v)
+		if err != nil {
 			return nil, err
-		} else {
-			b = b2
 		}
 	}
 
@@ -293,16 +280,14 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 		if len(b)+len(k) > maxLogSize {
 			return nil, ErrTooLarge
 		}
-		if b2, err := appendMsgpack(b, k); err != nil {
+		b, err = appendMsgpack(b, k)
+		if err != nil {
 			return nil, err
-		} else {
-			b = b2
 		}
 
-		if b2, err := appendMsgpack(b, v); err != nil {
+		b, err = appendMsgpack(b, v)
+		if err != nil {
 			return nil, err
-		} else {
-			b = b2
 		}
 	}
 

@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+const (
+	// EnvLogLevel ks the environment variable name to configure
+	// the default logger's log level at program startup.
+	EnvLogLevel = "CYBOZU_LOG_LEVEL"
+)
+
 var (
 	defaultLogger *Logger
 )
@@ -14,6 +20,11 @@ func init() {
 	_log.SetOutput(defaultLogger.Writer(LvInfo))
 	// no date/time needed
 	_log.SetFlags(0)
+
+	level := os.Getenv(EnvLogLevel)
+	if len(level) > 0 {
+		defaultLogger.SetThresholdByName(level)
+	}
 }
 
 // DefaultLogger returns the pointer to the default logger.

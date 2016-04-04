@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	testLog1  = `tag=tag1 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message"` + "\n"
-	testLog2  = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=true` + "\n"
-	testLog2_ = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=false` + "\n"
+	testLog1 = `tag=tag1 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message"` + "\n"
+	testLog2 = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=true` + "\n"
+	testLog3 = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=false` + "\n"
 )
 
 func TestAppendLogfmt(t *testing.T) {
@@ -128,8 +128,8 @@ func TestLogfmt2(t *testing.T) {
 	if buf, err := logfmt(l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testLog2_ {
-			t.Error(string(buf) + " != " + testLog2_)
+		if string(buf) != testLog3 {
+			t.Error(string(buf) + " != " + testLog3)
 		}
 	}
 }

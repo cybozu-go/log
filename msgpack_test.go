@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	testData1  = "\x93\xa4tag1\x0a\x84\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message"
-	testData2  = "\x93\xa4tag2\x0a\x85\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message\xa6secret\xc3"
-	testData2_ = "\x93\xa4tag2\x0a\x85\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message\xa6secret\xc2"
+	testData1 = "\x93\xa4tag1\x0a\x84\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message"
+	testData2 = "\x93\xa4tag2\x0a\x85\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message\xa6secret\xc3"
+	testData3 = "\x93\xa4tag2\x0a\x85\xa9logged_at\xd2\x00\x98\x96\xa0\xa8severity\a\xa7utsname\xa9localhost\xa7message\xactest message\xa6secret\xc2"
 )
 
 func TestAppendMsgpack(t *testing.T) {
@@ -192,9 +192,9 @@ func TestMsgpackFmt2(t *testing.T) {
 	if buf, err := msgpackfmt(l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testData2_ {
+		if string(buf) != testData3 {
 			t.Error(strconv.QuoteToASCII(string(buf)) +
-				" != " + strconv.QuoteToASCII(testData2_))
+				" != " + strconv.QuoteToASCII(testData3))
 		}
 	}
 }
