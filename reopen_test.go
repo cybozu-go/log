@@ -3,39 +3,49 @@ package log
 import (
 	"bytes"
 	"io"
+	"os"
 	"syscall"
 	"testing"
+	"time"
 )
 
-type closeBuffer struct {
+type bufferOpener struct {
 	bytes.Buffer
+	nopen  int
+	nclose int
 }
 
-func (*closeBuffer) Close() error {
+func (c *bufferOpener) Close() error {
+	c.nclose++
 	return nil
+}
+
+func (c *bufferOpener) Open() (io.WriteCloser, error) {
+	c.nopen++
+	return c, nil
 }
 
 func TestReopenWriter(t *testing.T) {
 	t.Parallel()
 
-	nopen := 0
-	var buf closeBuffer
-	opener := func() (io.WriteCloser, error) {
-		nopen++
-		return &buf, nil
+	var buf bufferOpener
+	w, err := NewReopenWriter(&buf, syscall.SIGUSR1)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	w := NewReopenWriter(opener, syscall.SIGUSR1)
 	w.Write([]byte("foobar"))
 
-	// syscall.Kill(os.Getpid(), syscall.SIGUSR1)
-	// send a signal directly because signal may be delayed.
-	w.(*reopenWriter).sigc <- syscall.SIGUSR1
+	syscall.Kill(os.Getpid(), syscall.SIGUSR1)
+	time.Sleep(time.Second)
 
 	w.Write([]byte("1234"))
 
-	if nopen != 2 {
-		t.Errorf("number of open should be 2 but %v", nopen)
+	if buf.nopen != 2 {
+		t.Errorf("number of open should be 2 but %v", buf.nopen)
+	}
+	if buf.nclose != 1 {
+		t.Errorf("number of close should be 1 but %v", buf.nclose)
 	}
 	s := buf.String()
 	if "foobar1234" != s {

@@ -4,48 +4,67 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"sync"
 )
 
-type reopenWriter struct {
-	sigc   chan os.Signal
-	opener func() (io.WriteCloser, error)
-	writer io.WriteCloser
+// WriterOpener opens a new io.WriteCloser.
+type WriterOpener interface {
+	Open() (io.WriteCloser, error)
 }
 
-// NewReopenWriter constructs a io.Writer that reopens inner io.WriteCloser.
-// opener should open a inner io.WriteCloser, it is called when signals are notified.
-func NewReopenWriter(opener func() (io.WriteCloser, error), sig ...os.Signal) io.Writer {
+type reopenWriter struct {
+	m       sync.Mutex
+	lastErr error
+	writer  io.WriteCloser
+}
+
+// NewReopenWriter constructs a io.Writer that reopens inner io.WriteCloser
+// when signals are notified.
+func NewReopenWriter(opener WriterOpener, sig ...os.Signal) (io.Writer, error) {
+	w, err := opener.Open()
+	if err != nil {
+		return nil, err
+	}
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, sig...)
-	return &reopenWriter{
-		c,
-		opener,
-		nil,
+	r := reopenWriter{
+		writer: w,
 	}
+	go func() {
+		for range c {
+			r.m.Lock()
+			if r.writer != nil {
+				err := r.writer.Close()
+				// io.Closer does not guarantee that it is safe to call it twice.
+				r.writer = nil
+				if err != nil {
+					r.lastErr = err
+					r.m.Unlock()
+					continue
+				}
+			}
+			w, err := opener.Open()
+			if err != nil {
+				r.lastErr = err
+				r.m.Unlock()
+				continue
+			}
+			r.writer = w
+			r.lastErr = nil
+			r.m.Unlock()
+		}
+	}()
+	return &r, nil
 }
 
 // Write calles inner writes.
-// If signals are notified, it (re-)opens new io.WriteCloser by opener.
+// If some error has happened when re-opening, this reports the error.
 func (r *reopenWriter) Write(p []byte) (n int, err error) {
-	select {
-	case <-r.sigc:
-		if r.writer != nil {
-			err = r.writer.Close()
-			if err != nil {
-				return
-			}
-			r.writer = nil
-		}
-	default:
+	r.m.Lock()
+	defer r.m.Unlock()
+	if r.lastErr != nil {
+		err = r.lastErr
+		return
 	}
-	if r.writer == nil {
-		w, e := r.opener()
-		if e != nil {
-			err = e
-			return
-		}
-		r.writer = w
-	}
-
 	return r.writer.Write(p)
 }
