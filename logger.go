@@ -231,6 +231,9 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 			return err
 		}
 		_, err = l.output.Write(buf)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "logger output causes an error: %v", err)
+		}
 		return err
 	}
 

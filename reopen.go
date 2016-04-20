@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -13,7 +14,7 @@ type WriterOpener interface {
 }
 
 type reopenWriter struct {
-	m       sync.Mutex
+	lock    sync.Mutex
 	lastErr error
 	writer  io.WriteCloser
 }
@@ -27,43 +28,44 @@ func NewReopenWriter(opener WriterOpener, sig ...os.Signal) (io.Writer, error) {
 	}
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, sig...)
-	r := reopenWriter{
+	r := &reopenWriter{
 		writer: w,
+	}
+	reopen := func() {
+		r.lock.Lock()
+		defer r.lock.Unlock()
+		if r.writer != nil {
+			err := r.writer.Close()
+			// io.Closer does not guarantee that it is safe to call it twice.
+			r.writer = nil
+			if err != nil {
+				r.lastErr = err
+				return
+			}
+		}
+		w, err := opener.Open()
+		if err != nil {
+			r.lastErr = err
+			return
+		}
+		r.writer = w
+		r.lastErr = nil
 	}
 	go func() {
 		for range c {
-			r.m.Lock()
-			if r.writer != nil {
-				err := r.writer.Close()
-				// io.Closer does not guarantee that it is safe to call it twice.
-				r.writer = nil
-				if err != nil {
-					r.lastErr = err
-					r.m.Unlock()
-					continue
-				}
-			}
-			w, err := opener.Open()
-			if err != nil {
-				r.lastErr = err
-				r.m.Unlock()
-				continue
-			}
-			r.writer = w
-			r.lastErr = nil
-			r.m.Unlock()
+			reopen()
 		}
 	}()
-	return &r, nil
+	return r, nil
 }
 
 // Write calles inner writes.
 // If some error has happened when re-opening, this reports the error.
 func (r *reopenWriter) Write(p []byte) (n int, err error) {
-	r.m.Lock()
-	defer r.m.Unlock()
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	if r.lastErr != nil {
-		err = r.lastErr
+		err = fmt.Errorf("unusable due to %v", r.lastErr)
 		return
 	}
 	return r.writer.Write(p)
