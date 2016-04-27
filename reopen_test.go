@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"os"
 	"syscall"
 	"testing"
@@ -50,5 +51,63 @@ func TestReopenWriter(t *testing.T) {
 	s := buf.String()
 	if "foobar1234" != s {
 		t.Errorf("written data should be \"foobar1234\" but \"%v\"", s)
+	}
+}
+
+func TestFileReopener(t *testing.T) {
+	t.Parallel()
+
+	f, err := ioutil.TempFile("", "gotest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	g, err := ioutil.TempFile("", "gotest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Close()
+
+	w, err := NewFileReopener(f.Name(), syscall.SIGUSR2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	DefaultLogger().SetOutput(w)
+	Critical("hoge", nil)
+	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
+	time.Sleep(100 * time.Millisecond)
+
+	if err := os.Rename(f.Name(), g.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
+	time.Sleep(100 * time.Millisecond)
+	Critical("fuga", nil)
+	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
+	time.Sleep(100 * time.Millisecond)
+
+	if hoge, err := ioutil.ReadFile(g.Name()); err != nil {
+		t.Error(err)
+	} else {
+		if !bytes.Contains(hoge, []byte("hoge")) {
+			t.Error("g must contain hoge")
+		}
+		if bytes.Contains(hoge, []byte("fuga")) {
+			t.Error("g must not contain fuga")
+		}
+	}
+
+	if fuga, err := ioutil.ReadFile(f.Name()); err != nil {
+		t.Error(err)
+	} else {
+		if bytes.Contains(fuga, []byte("hoge")) {
+			t.Error("f must not contain hoge")
+		}
+		if !bytes.Contains(fuga, []byte("fuga")) {
+			t.Error("f must contain fuga")
+		}
 	}
 }

@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// WriterOpener opens a new io.WriteCloser.
-type WriterOpener interface {
+// Opener returns a new io.WriteCloser.
+type Opener interface {
 	Open() (io.WriteCloser, error)
 }
 
@@ -20,8 +20,8 @@ type reopenWriter struct {
 }
 
 // NewReopenWriter constructs a io.Writer that reopens inner io.WriteCloser
-// when signals are notified.
-func NewReopenWriter(opener WriterOpener, sig ...os.Signal) (io.Writer, error) {
+// when signals are received.
+func NewReopenWriter(opener Opener, sig ...os.Signal) (io.Writer, error) {
 	w, err := opener.Open()
 	if err != nil {
 		return nil, err
@@ -69,4 +69,16 @@ func (r *reopenWriter) Write(p []byte) (n int, err error) {
 		return
 	}
 	return r.writer.Write(p)
+}
+
+type fileOpener string
+
+func (o fileOpener) Open() (io.WriteCloser, error) {
+	return os.OpenFile(string(o), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+}
+
+// NewFileReopener returns io.Writer that will reopen the named file
+// when signals are received.
+func NewFileReopener(filename string, sig ...os.Signal) (io.Writer, error) {
+	return NewReopenWriter(fileOpener(filename), sig...)
 }
