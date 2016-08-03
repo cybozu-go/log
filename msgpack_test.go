@@ -145,16 +145,15 @@ func TestAppendMsgpack(t *testing.T) {
 func TestMsgpackFmt1(t *testing.T) {
 	t.Parallel()
 
-	l := &Logger{
-		utsname:  "localhost",
-		tag:      "tag1",
-		defaults: nil,
-		buffer:   make([]byte, 0, 4096),
-	}
+	utsname = "localhost"
+	l := NewLogger()
+	l.SetTopic("tag1")
 
 	ts := time.Date(1970, time.January, 1, 0, 0, 10, 32000, time.UTC)
+	f := MsgPack{}
+	b := make([]byte, 0, 4096)
 
-	if buf, err := msgpackfmt(l, ts, LvDebug, "test message", nil); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testData1 {
@@ -167,16 +166,17 @@ func TestMsgpackFmt1(t *testing.T) {
 func TestMsgpackFmt2(t *testing.T) {
 	t.Parallel()
 
-	l := &Logger{
-		utsname:  "localhost",
-		tag:      "tag2",
-		defaults: map[string]interface{}{FnSecret: true},
-		buffer:   make([]byte, 0, 4096),
-	}
+	utsname = "localhost"
+
+	l := NewLogger()
+	l.SetTopic("tag2")
+	l.SetDefaults(map[string]interface{}{FnSecret: true})
 
 	ts := time.Date(1970, time.January, 1, 0, 0, 10, 32000, time.UTC)
+	f := MsgPack{}
+	b := make([]byte, 0, 4096)
 
-	if buf, err := msgpackfmt(l, ts, LvDebug, "test message", nil); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testData2 {
@@ -189,7 +189,7 @@ func TestMsgpackFmt2(t *testing.T) {
 	fields := map[string]interface{}{
 		FnSecret: false,
 	}
-	if buf, err := msgpackfmt(l, ts, LvDebug, "test message", fields); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testData3 {

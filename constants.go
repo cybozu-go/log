@@ -2,12 +2,11 @@ package log
 
 // Standard log field names.
 const (
-	FnTag            = "tag"
+	FnTopic          = "topic"
 	FnLoggedAt       = "logged_at"
 	FnSeverity       = "severity"
 	FnUtsname        = "utsname"
 	FnMessage        = "message"
-	FnLoggedBy       = "logged_by"
 	FnSecret         = "secret"
 	FnRequestID      = "request_id"
 	FnOperationID    = "operation_id"
@@ -42,9 +41,11 @@ const (
 	// The maximum length of a formatted log message.
 	maxLogSize = 1 << 20
 
-	// The maximum length of field keys.
-	maxFieldNameLength = 128
+	// The maximum length of topic.
+	maxTopicLength = 128
+)
 
-	// The maximum length of tag name.
-	maxTagLength = 128
+const (
+	// RFC3339Micro is for time.Time.Format().
+	RFC3339Micro = "2006-01-02T15:04:05.000000Z07:00"
 )

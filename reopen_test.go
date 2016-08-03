@@ -76,6 +76,7 @@ func TestFileReopener(t *testing.T) {
 
 	lg := NewLogger()
 	lg.SetOutput(w)
+	lg.SetFormatter(Logfmt{})
 	lg.Critical("hoge", nil)
 	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
 	time.Sleep(100 * time.Millisecond)
@@ -139,6 +140,7 @@ func TestFileReopenerCorrection(t *testing.T) {
 
 	lg := NewLogger()
 	lg.SetOutput(w)
+	lg.SetFormatter(Logfmt{})
 	lg.Critical("hoge", nil)
 
 	if err := os.Rename(f.Name(), g.Name()); err != nil {

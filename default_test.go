@@ -16,6 +16,7 @@ func TestDefaultLogger(t *testing.T) {
 	l := DefaultLogger()
 	buf := new(bytes.Buffer)
 	l.SetOutput(buf)
+	l.SetFormatter(Logfmt{})
 
 	_log.Print(magicData)
 	if buf.Len() == 0 {

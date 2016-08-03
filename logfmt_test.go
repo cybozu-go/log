@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	testLog1 = `tag=tag1 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message"` + "\n"
-	testLog2 = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=true` + "\n"
-	testLog3 = `tag=tag2 logged_at=2001-12-03T13:45:01.123456789Z severity=debug utsname=localhost message="test message" secret=false` + "\n"
+	testLog1 = `topic=tag1 logged_at=2001-12-03T13:45:01.123456Z severity=debug utsname=localhost message="test message"` + "\n"
+	testLog2 = `topic=tag2 logged_at=2001-12-03T13:45:01.123456Z severity=debug utsname=localhost message="test message" secret=true` + "\n"
+	testLog3 = `topic=tag2 logged_at=2001-12-03T13:45:01.123456Z severity=debug utsname=localhost message="test message" secret=false` + "\n"
 )
 
 func TestAppendLogfmt(t *testing.T) {
@@ -46,42 +46,46 @@ func TestAppendLogfmt(t *testing.T) {
 
 	b = b[:0]
 	b, _ = appendLogfmt(b, []int{-100, 100, 20000})
-	if string(b) != `[-100, 100, 20000]` {
+	if string(b) != `[-100 100 20000]` {
 		t.Error("failed to format int list")
 	}
 
 	b = b[:0]
 	b, _ = appendLogfmt(b, []int64{-100, 100, 20000})
-	if string(b) != `[-100, 100, 20000]` {
+	if string(b) != `[-100 100 20000]` {
 		t.Error("failed to format int64 list")
 	}
 
 	b = b[:0]
 	b, _ = appendLogfmt(b, []string{"abc", "def"})
-	if string(b) != `["abc", "def"]` {
+	if string(b) != `["abc" "def"]` {
 		t.Error("failed to format string list")
 	}
 
 	b = b[:0]
-	_, err := appendLogfmt(b, []interface{}{"abc", 100})
-	if err != ErrInvalidData {
-		t.Error("[]interface{} must be an invalid data")
+	b, _ = appendLogfmt(b, map[string]interface{}{
+		"abc":     123,
+		"def ghi": nil,
+	})
+	if string(b) != `{abc=123 "def ghi"=null}` &&
+		string(b) != `{"def ghi"=null abc=123}` {
+		t.Error("failed to format map[string]interface{}")
 	}
 }
 
 func TestLogfmt1(t *testing.T) {
 	t.Parallel()
 
-	l := &Logger{
-		utsname:  "localhost",
-		tag:      "tag1",
-		defaults: nil,
-		buffer:   make([]byte, 0, 4096),
-	}
+	utsname = "localhost"
+
+	l := NewLogger()
+	l.SetTopic("tag1")
 
 	ts := time.Date(2001, time.December, 3, 13, 45, 1, 123456789, time.UTC)
+	f := Logfmt{}
+	b := make([]byte, 0, 4096)
 
-	if buf, err := logfmt(l, ts, LvDebug, "test message", nil); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testLog1 {
@@ -92,7 +96,7 @@ func TestLogfmt1(t *testing.T) {
 	// Time is always formatted in UTC.
 	ts = time.Date(2001, time.December, 3, 22, 45, 1, 123456789,
 		time.FixedZone("Asia/Tokyo", 9*3600))
-	if buf, err := logfmt(l, ts, LvDebug, "test message", nil); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testLog1 {
@@ -104,16 +108,17 @@ func TestLogfmt1(t *testing.T) {
 func TestLogfmt2(t *testing.T) {
 	t.Parallel()
 
-	l := &Logger{
-		utsname:  "localhost",
-		tag:      "tag2",
-		defaults: map[string]interface{}{FnSecret: true},
-		buffer:   make([]byte, 0, 4096),
-	}
+	utsname = "localhost"
+
+	l := NewLogger()
+	l.SetTopic("tag2")
+	l.SetDefaults(map[string]interface{}{FnSecret: true})
 
 	ts := time.Date(2001, time.December, 3, 13, 45, 1, 123456789, time.UTC)
+	f := Logfmt{}
+	b := make([]byte, 0, 4096)
 
-	if buf, err := logfmt(l, ts, LvDebug, "test message", nil); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testLog2 {
@@ -125,7 +130,7 @@ func TestLogfmt2(t *testing.T) {
 	fields := map[string]interface{}{
 		FnSecret: false,
 	}
-	if buf, err := logfmt(l, ts, LvDebug, "test message", fields); err != nil {
+	if buf, err := f.Format(b, l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
 		if string(buf) != testLog3 {

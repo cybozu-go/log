@@ -26,11 +26,6 @@ Features
     By default, logs are formatted in [logfmt][], and goes out
     to the standard error.
 
-* Built-in fluentd forwarder.
-
-    If the framework finds `/run/fluentd/fluentd.sock` UNIX domain
-    socket, it replicates logs to [fluentd][] as well.
-
 * Automatic redirect for Go standard logs.
 
     The framework automatically redirects [Go standard logs][golog]

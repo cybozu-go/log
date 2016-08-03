@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-func TestNormalizeTag(t *testing.T) {
+func TestNormalizeTopic(t *testing.T) {
 	t.Parallel()
 
-	if normalizeTag("abc.-def") != "abc.-def" {
+	if normalizeTopic("abc.-def") != "abc.-def" {
 		t.Error("abc.-def")
 	}
-	if normalizeTag("Abc.-Def") != "abc.-def" {
+	if normalizeTopic("Abc.-Def") != "abc.-def" {
 		t.Error("Abc.-Def")
 	}
-	if normalizeTag("Abc._Def") != "abc.-def" {
+	if normalizeTopic("Abc._Def") != "abc.-def" {
 		t.Error("Abc._Def")
 	}
 }
@@ -24,19 +24,17 @@ func TestLogger(t *testing.T) {
 	t.Parallel()
 
 	l := NewLogger()
-	if len(l.utsname) == 0 {
-		t.Error("no utsname")
+	if l.Topic() != "log.test" {
+		t.Error(`topic != "log.test"`)
 	}
-	if l.Tag() != "log.test" {
-		t.Error(`tag != "log.test"`)
-	}
-	l.SetTag("hoge")
-	if l.Tag() != "hoge" {
-		t.Error("failed to set tag")
+	l.SetTopic("hoge")
+	if l.Topic() != "hoge" {
+		t.Error("failed to set topic")
 	}
 
 	buf := new(bytes.Buffer)
 	l.SetOutput(buf)
+	l.SetFormatter(Logfmt{})
 	if err := l.Debug("hoge", nil); err != nil {
 		t.Error(err)
 	}
@@ -52,7 +50,7 @@ func TestLogger(t *testing.T) {
 		t.Error("debug log should not be ignored")
 	} else {
 		s := string(buf.Bytes())
-		if !strings.Contains(s, "tag=hoge") {
+		if !strings.Contains(s, "topic=hoge") {
 			t.Error("Invalid log: " + s)
 		}
 	}
@@ -71,31 +69,31 @@ func TestLogger(t *testing.T) {
 	}
 
 	l.SetDefaults(map[string]interface{}{
-		FnLoggedBy: "logger_test",
+		FnSecret: true,
 	})
 	buf.Reset()
 	if err := l.Debug("hoge", nil); err != nil {
 		t.Error(err)
 	} else {
 		s := string(buf.Bytes())
-		if !strings.Contains(s, `logged_by="logger_test"`) {
+		if !strings.Contains(s, `secret=true`) {
 			t.Error("failed to include default fields")
 		}
 	}
 
 	buf.Reset()
 	fields := map[string]interface{}{
-		FnLoggedBy: "a",
-		"_custom":  10000,
+		FnSecret: true,
+		"custom": 10000,
 	}
 	if err := l.Debug("hoge", fields); err != nil {
 		t.Error(err)
 	} else {
 		s := string(buf.Bytes())
-		if !strings.Contains(s, `logged_by="a"`) {
+		if !strings.Contains(s, `secret=true`) {
 			t.Error("failed to specify fields")
 		}
-		if !strings.Contains(s, `_custom=10000`) {
+		if !strings.Contains(s, `custom=10000`) {
 			t.Error("failed to specify custom field")
 		}
 	}
