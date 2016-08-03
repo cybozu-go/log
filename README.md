@@ -17,19 +17,20 @@ Features
     Hard-coded maximum log buffer size and 1-pass formatters
     help cybozu/log be memory- and CPU- efficient.
 
-* Less configuration.
+* Built-in logfmt and JSON Lines formatters.
 
-    In fact, nothing need to be configured for most cases.
-
-* Built-in logfmt formatter.
-
-    By default, logs are formatted in [logfmt][], and goes out
-    to the standard error.
+    By default, logs are formatted in syslog-like plain text.
+    [logfmt][] and [JSON Lines][jsonl] formatters can be used alternatively.
 
 * Automatic redirect for Go standard logs.
 
     The framework automatically redirects [Go standard logs][golog]
     to itself.
+
+* Reopen handler.
+
+    The framework comes with a handy writer that reopens the log file
+    upon signal reception.  Useful for work with log rotating programs.
 
 Usage
 -----
@@ -42,6 +43,6 @@ License
 [MIT](https://opensource.org/licenses/MIT)
 
 [logfmt]: https://brandur.org/logfmt
-[fluentd]: http://www.fluentd.org/
+[jsonl]: http://jsonlines.org/
 [golog]: https://golang.org/pkg/log/
 [godoc]: https://godoc.org/github.com/cybozu-go/log
