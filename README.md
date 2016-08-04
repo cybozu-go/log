@@ -1,5 +1,7 @@
-[![GoDoc](https://godoc.org/github.com/cybozu-go/log?status.png)][godoc]
-[![Build Status](https://travis-ci.org/cybozu-go/log.png)](https://travis-ci.org/cybozu-go/log)
+[![GoDoc](https://godoc.org/github.com/cybozu-go/log?status.svg)][godoc]
+[![Build Status](https://travis-ci.org/cybozu-go/log.svg?branch=master)](https://travis-ci.org/cybozu-go/log)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cybozu-go/log)](https://goreportcard.com/report/github.com/cybozu-go/log)
+[![License](https://img.shields.io/github/license/cybozu-go/log.svg?maxAge=2592000)](LICENSE)
 
 Logging framework for Go
 ========================
