@@ -74,8 +74,10 @@ func TestFileReopener(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	DefaultLogger().SetOutput(w)
-	Critical("hoge", nil)
+	lg := NewLogger()
+	lg.SetOutput(w)
+	lg.SetFormatter(Logfmt{})
+	lg.Critical("hoge", nil)
 	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
 	time.Sleep(100 * time.Millisecond)
 
@@ -85,7 +87,7 @@ func TestFileReopener(t *testing.T) {
 
 	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
 	time.Sleep(100 * time.Millisecond)
-	Critical("fuga", nil)
+	lg.Critical("fuga", nil)
 	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
 	time.Sleep(100 * time.Millisecond)
 
@@ -108,6 +110,62 @@ func TestFileReopener(t *testing.T) {
 		}
 		if !bytes.Contains(fuga, []byte("fuga")) {
 			t.Error("f must contain fuga")
+		}
+	}
+}
+
+func TestFileReopenerCorrection(t *testing.T) {
+	t.Parallel()
+
+	f, err := ioutil.TempFile("", "gotest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = f.Write([]byte("abc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	g, err := ioutil.TempFile("", "gotest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.Close()
+
+	w, err := NewFileReopener(f.Name(), syscall.SIGHUP)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lg := NewLogger()
+	lg.SetOutput(w)
+	lg.SetFormatter(Logfmt{})
+	lg.Critical("hoge", nil)
+
+	if err := os.Rename(f.Name(), g.Name()); err != nil {
+		t.Fatal(err)
+	}
+
+	syscall.Kill(os.Getpid(), syscall.SIGHUP)
+	time.Sleep(100 * time.Millisecond)
+	lg.Critical("fuga", nil)
+	syscall.Kill(os.Getpid(), syscall.SIGHUP)
+	time.Sleep(100 * time.Millisecond)
+
+	if hoge, err := ioutil.ReadFile(g.Name()); err != nil {
+		t.Error(err)
+	} else {
+		if !bytes.HasPrefix(hoge, []byte("abc\n")) {
+			t.Error(`!bytes.HasPrefix(hoge, []byte("abc\n"))`)
+		}
+	}
+
+	if fuga, err := ioutil.ReadFile(f.Name()); err != nil {
+		t.Error(err)
+	} else {
+		if bytes.HasPrefix(fuga, []byte("\n")) {
+			t.Error(`bytes.HasPrefix(fuga, []byte("\n"))`)
 		}
 	}
 }

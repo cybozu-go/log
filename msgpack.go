@@ -1,11 +1,7 @@
-// msgpack encoder.
-// https://github.com/msgpack/msgpack/blob/master/spec.md
-
 package log
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math"
 	"time"
 )
@@ -155,12 +151,16 @@ func appendMsgpack(b []byte, v interface{}) ([]byte, error) {
 	}
 }
 
-func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
-	fields map[string]interface{}) ([]byte, error) {
-	b := l.buffer[:0]
+// MsgPack implements Formatter for msgpack format.
+//
+// https://github.com/msgpack/msgpack/blob/master/spec.md
+type MsgPack struct{}
 
+// Format implements Formatter.Format.
+func (m MsgPack) Format(b []byte, l *Logger, t time.Time, severity int, msg string,
+	fields map[string]interface{}) ([]byte, error) {
 	b = append(b, byte(mpFixArray+3))
-	b, err := appendMsgpack(b, l.tag)
+	b, err := appendMsgpack(b, l.Topic())
 	if err != nil {
 		return nil, err
 	}
@@ -175,12 +175,12 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 	var nFields uint64
 	nFields += 4
 	for k := range fields {
-		if !reservedKey(k) {
+		if !ReservedKey(k) {
 			nFields++
 		}
 	}
 	for k := range l.defaults {
-		if reservedKey(k) {
+		if ReservedKey(k) {
 			continue
 		}
 		if _, ok := fields[k]; ok {
@@ -224,7 +224,7 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 	if err != nil {
 		return nil, err
 	}
-	b, err = appendMsgpack(b, l.utsname)
+	b, err = appendMsgpack(b, utsname)
 	if err != nil {
 		return nil, err
 	}
@@ -244,13 +244,9 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 
 	// fields
 	for k, v := range fields {
-		if reservedKey(k) {
+		if ReservedKey(k) {
 			continue
 		}
-		if len(k) > maxFieldNameLength {
-			return nil, fmt.Errorf("Too long field name: %s", k)
-		}
-
 		if len(b)+len(k) > maxLogSize {
 			return nil, ErrTooLarge
 		}
@@ -266,17 +262,13 @@ func msgpackfmt(l *Logger, t time.Time, severity int, msg string,
 	}
 
 	// defaults
-	for k, v := range l.defaults {
-		if reservedKey(k) {
+	for k, v := range l.Defaults() {
+		if ReservedKey(k) {
 			continue
 		}
 		if _, ok := fields[k]; ok {
 			continue
 		}
-		if len(k) > maxFieldNameLength {
-			return nil, fmt.Errorf("Too long field name: %s", k)
-		}
-
 		if len(b)+len(k) > maxLogSize {
 			return nil, ErrTooLarge
 		}

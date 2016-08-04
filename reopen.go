@@ -74,7 +74,39 @@ func (r *reopenWriter) Write(p []byte) (n int, err error) {
 type fileOpener string
 
 func (o fileOpener) Open() (io.WriteCloser, error) {
-	return os.OpenFile(string(o), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	f, err := os.OpenFile(string(o), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	// correct the tail of the file if the file is not empty and
+	// does not ends with a newline.
+	size := fi.Size()
+	if size > 0 {
+		var buf [1]byte
+		_, err = f.ReadAt(buf[:], size-1)
+		if err != nil {
+			goto OUT
+		}
+		if buf[0] == byte('\n') {
+			goto OUT
+		}
+		buf[0] = byte('\n')
+		_, err = f.Write(buf[:])
+	}
+
+OUT:
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+	return f, nil
 }
 
 // NewFileReopener returns io.Writer that will reopen the named file

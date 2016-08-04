@@ -8,32 +8,33 @@ import (
 	"unicode/utf8"
 )
 
-// Logfmt implements Formatter for logfmt format.
+// JSONFormat implements Formatter for JSON Lines.
 //
-// https://brandur.org/logfmt
-// https://gist.github.com/kr/0e8d5ee4b954ce604bb2
-type Logfmt struct{}
+// http://jsonlines.org/
+type JSONFormat struct{}
 
 // Format implements Formatter.Format.
-func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
+func (f JSONFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 	msg string, fields map[string]interface{}) ([]byte, error) {
 	var err error
 
 	// assume enough capacity for mandatory fields (except for msg).
-	buf = append(buf, "topic="...)
+	buf = append(buf, `{"topic":"`...)
 	buf = append(buf, l.Topic()...)
-	buf = append(buf, " logged_at="...)
+	buf = append(buf, `","logged_at":"`...)
 	buf = t.UTC().AppendFormat(buf, RFC3339Micro)
-	buf = append(buf, " severity="...)
+	buf = append(buf, `","severity":`...)
 	if ss, ok := severityMap[severity]; ok {
+		buf = append(buf, '"')
 		buf = append(buf, ss...)
+		buf = append(buf, '"')
 	} else {
 		buf = strconv.AppendInt(buf, int64(severity), 10)
 	}
-	buf = append(buf, " utsname="...)
+	buf = append(buf, `,"utsname":"`...)
 	buf = append(buf, utsname...)
-	buf = append(buf, " message="...)
-	buf, err = appendLogfmt(buf, msg)
+	buf = append(buf, `","message":`...)
+	buf, err = appendJSON(buf, msg)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +44,13 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 			return nil, ErrInvalidKey
 		}
 
-		if cap(buf) < (len(k) + 2) {
+		if cap(buf) < (len(k) + 4) {
 			return nil, ErrTooLarge
 		}
-		buf = append(buf, ' ')
+		buf = append(buf, `,"`...)
 		buf = append(buf, k...)
-		buf = append(buf, '=')
-		buf, err = appendLogfmt(buf, v)
+		buf = append(buf, `":`...)
+		buf, err = appendJSON(buf, v)
 		if err != nil {
 			return nil, err
 		}
@@ -60,25 +61,25 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 			continue
 		}
 
-		if cap(buf) < (len(k) + 2) {
+		if cap(buf) < (len(k) + 4) {
 			return nil, ErrTooLarge
 		}
-		buf = append(buf, ' ')
+		buf = append(buf, `,"`...)
 		buf = append(buf, k...)
-		buf = append(buf, '=')
-		buf, err = appendLogfmt(buf, v)
+		buf = append(buf, `":`...)
+		buf, err = appendJSON(buf, v)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if cap(buf) < 1 {
+	if cap(buf) < 2 {
 		return nil, ErrTooLarge
 	}
-	return append(buf, '\n'), nil
+	return append(buf, "}\n"...), nil
 }
 
-func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
+func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 	var err error
 
 	switch t := v.(type) {
@@ -93,11 +94,13 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 		}
 		return strconv.AppendBool(buf, t), nil
 	case time.Time:
-		// len("2006-01-02T15:04:05.000000Z07:00")
-		if cap(buf) < 32 {
+		// len("2006-01-02T15:04:05.000000Z07:00") + 2
+		if cap(buf) < 34 {
 			return nil, ErrTooLarge
 		}
-		return t.UTC().AppendFormat(buf, RFC3339Micro), nil
+		buf = append(buf, '"')
+		buf = t.UTC().AppendFormat(buf, RFC3339Micro)
+		return append(buf, '"'), nil
 	case int:
 		// len("-9223372036854775807")
 		if cap(buf) < 20 {
@@ -195,27 +198,19 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 				if cap(buf) < 1 {
 					return nil, ErrTooLarge
 				}
-				buf = append(buf, ' ')
+				buf = append(buf, ',')
 			}
-			key := k.String()
-			if regexpValidKey.MatchString(key) {
-				if cap(buf) < len(key) {
-					return nil, ErrTooLarge
-				}
-				buf = append(buf, key...)
-			} else {
-				buf, err = appendLogfmt(buf, key)
-				if err != nil {
-					return nil, err
-				}
+			buf, err = appendJSON(buf, k.String())
+			if err != nil {
+				return nil, err
 			}
 			if cap(buf) < 1 {
 				return nil, ErrTooLarge
 			}
-			buf = append(buf, '=')
-			buf, err = appendLogfmt(buf, value.MapIndex(k).Interface())
+			buf = append(buf, ':')
+			buf, err = appendJSON(buf, value.MapIndex(k).Interface())
 			if err != nil {
-				return nil, ErrTooLarge
+				return nil, err
 			}
 			first = false
 		}
@@ -237,9 +232,9 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 				if cap(buf) < 1 {
 					return nil, ErrTooLarge
 				}
-				buf = append(buf, ' ')
+				buf = append(buf, ',')
 			}
-			buf, err = appendLogfmt(buf, value.Index(i).Interface())
+			buf, err = appendJSON(buf, value.Index(i).Interface())
 			if err != nil {
 				return nil, err
 			}
@@ -251,6 +246,6 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 		return append(buf, ']'), nil
 	}
 
-	// other types are just formatted as string with "%v".
-	return appendLogfmt(buf, fmt.Sprintf("%v", v))
+	// other types are just formatted as a string with "%#v".
+	return appendJSON(buf, fmt.Sprintf("%#v", v))
 }

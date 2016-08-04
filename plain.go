@@ -2,56 +2,61 @@ package log
 
 import (
 	"fmt"
-	"reflect"
+	"sort"
 	"strconv"
 	"time"
 	"unicode/utf8"
 )
 
-// Logfmt implements Formatter for logfmt format.
+// PlainFormat implements Formatter to generate plain log messages.
 //
-// https://brandur.org/logfmt
-// https://gist.github.com/kr/0e8d5ee4b954ce604bb2
-type Logfmt struct{}
+// A plain log message looks like:
+// DATETIME SEVERITY UTSNAME TOPIC MESSAGE [OPTIONAL FIELDS...]
+type PlainFormat struct{}
 
 // Format implements Formatter.Format.
-func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
+func (f PlainFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 	msg string, fields map[string]interface{}) ([]byte, error) {
 	var err error
 
 	// assume enough capacity for mandatory fields (except for msg).
-	buf = append(buf, "topic="...)
-	buf = append(buf, l.Topic()...)
-	buf = append(buf, " logged_at="...)
 	buf = t.UTC().AppendFormat(buf, RFC3339Micro)
-	buf = append(buf, " severity="...)
+	buf = append(buf, ' ')
+	buf = append(buf, utsname...)
+	buf = append(buf, ' ')
+	buf = append(buf, l.Topic()...)
+	buf = append(buf, ' ')
 	if ss, ok := severityMap[severity]; ok {
 		buf = append(buf, ss...)
 	} else {
 		buf = strconv.AppendInt(buf, int64(severity), 10)
 	}
-	buf = append(buf, " utsname="...)
-	buf = append(buf, utsname...)
-	buf = append(buf, " message="...)
-	buf, err = appendLogfmt(buf, msg)
+	buf = append(buf, ": "...)
+	buf, err = appendPlain(buf, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range fields {
-		if !IsValidKey(k) {
-			return nil, ErrInvalidKey
+	if len(fields) > 0 {
+		keys := make([]string, 0, len(fields))
+		for k := range fields {
+			if !IsValidKey(k) {
+				return nil, ErrInvalidKey
+			}
+			keys = append(keys, k)
 		}
-
-		if cap(buf) < (len(k) + 2) {
-			return nil, ErrTooLarge
-		}
-		buf = append(buf, ' ')
-		buf = append(buf, k...)
-		buf = append(buf, '=')
-		buf, err = appendLogfmt(buf, v)
-		if err != nil {
-			return nil, err
+		sort.Strings(keys)
+		for _, k := range keys {
+			if cap(buf) < (len(k) + 2) {
+				return nil, ErrTooLarge
+			}
+			buf = append(buf, ' ')
+			buf = append(buf, k...)
+			buf = append(buf, '=')
+			buf, err = appendPlain(buf, fields[k])
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -59,14 +64,13 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 		if _, ok := fields[k]; ok {
 			continue
 		}
-
 		if cap(buf) < (len(k) + 2) {
 			return nil, ErrTooLarge
 		}
 		buf = append(buf, ' ')
 		buf = append(buf, k...)
 		buf = append(buf, '=')
-		buf, err = appendLogfmt(buf, v)
+		buf, err = appendPlain(buf, v)
 		if err != nil {
 			return nil, err
 		}
@@ -78,9 +82,7 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 	return append(buf, '\n'), nil
 }
 
-func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
-	var err error
-
+func appendPlain(buf []byte, v interface{}) ([]byte, error) {
 	switch t := v.(type) {
 	case nil:
 		if cap(buf) < 4 {
@@ -177,80 +179,8 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, t), nil
+	default:
+		// other types are just formatted as string with "%v".
+		return appendPlain(buf, fmt.Sprintf("%v", t))
 	}
-
-	value := reflect.ValueOf(v)
-	typ := value.Type()
-	kind := typ.Kind()
-
-	// string-keyed maps
-	if kind == reflect.Map && typ.Key().Kind() == reflect.String {
-		if cap(buf) < 1 {
-			return nil, ErrTooLarge
-		}
-		buf = append(buf, '{')
-		first := true
-		for _, k := range value.MapKeys() {
-			if !first {
-				if cap(buf) < 1 {
-					return nil, ErrTooLarge
-				}
-				buf = append(buf, ' ')
-			}
-			key := k.String()
-			if regexpValidKey.MatchString(key) {
-				if cap(buf) < len(key) {
-					return nil, ErrTooLarge
-				}
-				buf = append(buf, key...)
-			} else {
-				buf, err = appendLogfmt(buf, key)
-				if err != nil {
-					return nil, err
-				}
-			}
-			if cap(buf) < 1 {
-				return nil, ErrTooLarge
-			}
-			buf = append(buf, '=')
-			buf, err = appendLogfmt(buf, value.MapIndex(k).Interface())
-			if err != nil {
-				return nil, ErrTooLarge
-			}
-			first = false
-		}
-		if cap(buf) < 1 {
-			return nil, ErrTooLarge
-		}
-		return append(buf, '}'), nil
-	}
-
-	// slices and arrays
-	if kind == reflect.Slice || kind == reflect.Array {
-		if cap(buf) < 1 {
-			return nil, ErrTooLarge
-		}
-		buf = append(buf, '[')
-		first := true
-		for i := 0; i < value.Len(); i++ {
-			if !first {
-				if cap(buf) < 1 {
-					return nil, ErrTooLarge
-				}
-				buf = append(buf, ' ')
-			}
-			buf, err = appendLogfmt(buf, value.Index(i).Interface())
-			if err != nil {
-				return nil, err
-			}
-			first = false
-		}
-		if cap(buf) < 1 {
-			return nil, ErrTooLarge
-		}
-		return append(buf, ']'), nil
-	}
-
-	// other types are just formatted as string with "%v".
-	return appendLogfmt(buf, fmt.Sprintf("%v", v))
 }

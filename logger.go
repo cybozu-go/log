@@ -9,64 +9,64 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
-func reservedKey(k string) bool {
-	switch k {
-	case FnTag, FnLoggedAt, FnSeverity, FnUtsname, FnMessage:
-		return true
+var (
+	pool = &sync.Pool{
+		New: func() interface{} {
+			return make([]byte, 0, maxLogSize)
+		},
 	}
-	return false
+
+	utsname string
+)
+
+func init() {
+	hname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	utsname = hname
 }
 
 // Logger is a collection of properties how to output logs.
 // Properties are initially set by NewLogger.  They can be customized
 // later by Logger methods.
 type Logger struct {
-	utsname string
-
-	lock      *sync.Mutex
-	tag       string
+	mu        sync.RWMutex
+	topic     string
 	threshold int
 	defaults  map[string]interface{}
+	format    Formatter
 	output    io.Writer
-	buffer    []byte
-	fluentd   *fluentConn
 }
 
 // NewLogger constructs a new Logger struct.
 // The struct is initialized as follows:
-//    tag:       the program name normalized for tag spec.
+//    topic:        the program name normalized for tag spec.
 //    threshold: LvInfo, i.e., debug logs are disabled.
+//    format:    PlainFormat
 //    output:    os.Stderr
 //    defaults:  no default fields.
 func NewLogger() *Logger {
-	hname, err := os.Hostname()
-	if err != nil {
-		panic("os.Hostname() returns err: " + err.Error())
-	}
-	fluentd, err := newFluentConn()
-	if err != nil {
-		panic("failed to connect fluentd: " + err.Error())
-	}
-
 	return &Logger{
-		utsname:   hname,
-		lock:      new(sync.Mutex),
-		tag:       normalizeTag(path.Base(os.Args[0])),
+		topic:     normalizeTopic(path.Base(os.Args[0])),
 		threshold: LvInfo,
 		defaults:  nil,
+		format:    PlainFormat{},
 		output:    os.Stderr,
-		buffer:    make([]byte, 0, maxLogSize+4096),
-		fluentd:   fluentd,
 	}
 }
 
-func normalizeTag(n string) string {
-	// tags must match [.a-z0-9-]+
-	tag := strings.Map(func(r rune) rune {
+func normalizeTopic(n string) string {
+	// Topic must match [.a-z0-9-]+
+	topic := strings.Map(func(r rune) rune {
 		switch {
 		case r == '.' || r == '-':
+			return r
+		case r >= '0' && r < '9':
 			return r
 		case r >= 'a' && r <= 'z':
 			return r
@@ -76,36 +76,38 @@ func normalizeTag(n string) string {
 			return '-'
 		}
 	}, n)
-	if len(tag) > maxTagLength {
-		return tag[:maxTagLength]
+	if len(topic) > maxTopicLength {
+		return topic[:maxTopicLength]
 	}
-	return tag
+	return topic
 }
 
-// Tag returns the current tag for the logger.
-func (l *Logger) Tag() string {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	return l.tag
+// Topic returns the topic for the logger.
+func (l *Logger) Topic() string {
+	l.mu.RLock()
+	topic := l.topic
+	l.mu.RUnlock()
+	return topic
 }
 
-// SetTag sets a new tag for the logger.
-// tag must not be empty.  Too long tag may be shortened automatically.
-func (l *Logger) SetTag(tag string) {
-	if len(tag) == 0 {
+// SetTopic sets a new topic for the logger.
+// topic must not be empty.  Too long topic may be shortened automatically.
+func (l *Logger) SetTopic(topic string) {
+	if len(topic) == 0 {
 		panic("Empty tag")
 	}
 
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	l.tag = normalizeTag(tag)
+	l.mu.Lock()
+	l.topic = normalizeTopic(topic)
+	l.mu.Unlock()
 }
 
 // Threshold returns the current threshold of the logger.
 func (l *Logger) Threshold() int {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	return l.threshold
+	l.mu.RLock()
+	th := l.threshold
+	l.mu.RUnlock()
+	return th
 }
 
 // Enabled returns true if the log for the given level will be logged.
@@ -117,17 +119,18 @@ func (l *Logger) Threshold() int {
 //        })
 //    }
 func (l *Logger) Enabled(level int) bool {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	return level <= l.threshold
+	l.mu.RLock()
+	enabled := (level <= l.threshold)
+	l.mu.RUnlock()
+	return enabled
 }
 
 // SetThreshold sets the threshold for the logger.
 // level must be a pre-defined constant such as LvInfo.
 func (l *Logger) SetThreshold(level int) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.mu.Lock()
 	l.threshold = level
+	l.mu.Unlock()
 }
 
 // SetThresholdByName sets the threshold for the logger by the level name.
@@ -153,18 +156,40 @@ func (l *Logger) SetThresholdByName(n string) error {
 
 // SetDefaults sets default field values for the logger.
 // Setting nil effectively clear the defaults.
-func (l *Logger) SetDefaults(d map[string]interface{}) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+func (l *Logger) SetDefaults(d map[string]interface{}) error {
+	for key := range d {
+		if !IsValidKey(key) {
+			return ErrInvalidKey
+		}
+	}
+
+	l.mu.Lock()
 	l.defaults = d
+	l.mu.Unlock()
+	return nil
+}
+
+// Defaults returns default field values.
+func (l *Logger) Defaults() map[string]interface{} {
+	l.mu.RLock()
+	defaults := l.defaults
+	l.mu.RUnlock()
+	return defaults
+}
+
+// SetFormatter sets log formatter.
+func (l *Logger) SetFormatter(f Formatter) {
+	l.mu.Lock()
+	l.format = f
+	l.mu.Unlock()
 }
 
 // SetOutput sets io.Writer for log output.
 // Setting nil disables log output.
 func (l *Logger) SetOutput(w io.Writer) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
+	l.mu.Lock()
 	l.output = w
+	l.mu.Unlock()
 }
 
 // Writer returns an io.Writer.
@@ -191,50 +216,26 @@ func (l *Logger) Writer(severity int) io.Writer {
 // Log outputs a log message with additional fields.
 // fields can be nil.
 func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) error {
-	t := time.Now()
-
-	l.lock.Lock()
-	defer l.lock.Unlock()
-
-	if severity > l.threshold {
+	if severity > l.Threshold() {
 		return nil
 	}
 
-	// If fluentd is/was running on the host, the framework never gives
-	// up sending logs to fluentd.
-	if l.fluentd != nil {
-		for {
-			buf, err := msgpackfmt(l, t, severity, msg, fields)
-			if err != nil {
-				return err
-			}
-			err = l.fluentd.SendMessage(buf)
-			if err == nil {
-				break
-			}
-			l.fluentd.Close()
-			for {
-				os.Stderr.WriteString("reconnecting to fluentd...\n")
-				conn, _ := newFluentConn()
-				if conn != nil {
-					l.fluentd = conn
-					break
-				}
-				time.Sleep(time.Second)
-			}
-		}
-	}
+	t := time.Now()
+	buf := pool.Get().([]byte)
+	defer pool.Put(buf)
 
 	if l.output != nil {
-		buf, err := logfmt(l, t, severity, msg, fields)
+		b, err := l.format.Format(buf, l, t, severity, msg, fields)
 		if err != nil {
 			return err
 		}
-		_, err = l.output.Write(buf)
-		if err != nil {
+
+		l.mu.Lock()
+		defer l.mu.Unlock()
+		if _, err := l.output.Write(b); err != nil {
 			fmt.Fprintf(os.Stderr, "logger output causes an error: %v", err)
+			return errors.Wrap(err, "Logger.Log")
 		}
-		return err
 	}
 
 	return nil
