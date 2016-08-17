@@ -15,6 +15,7 @@ const (
 	FnURL            = "url"
 	FnHTTPMethod     = "http_method"
 	FnHTTPVersion    = "http_version"
+	FnHTTPHost       = "http_host"
 	FnHTTPStatusCode = "http_status_code"
 	FnHTTPReferer    = "http_referer"
 	FnHTTPUserAgent  = "http_user_agent"
