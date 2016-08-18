@@ -8,7 +8,7 @@ const (
 	FnUtsname        = "utsname"
 	FnMessage        = "message"
 	FnSecret         = "secret"
-	FnAccessLog      = "access_log"
+	FnType           = "type"
 	FnRequestID      = "request_id"
 	FnOperationID    = "operation_id"
 	FnResponseTime   = "response_time"
