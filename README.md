@@ -34,6 +34,8 @@ Features
     The framework comes with a handy writer that reopens the log file
     upon signal reception.  Useful for work with log rotating programs.
 
+    Only for non-Windows systems.
+
 Usage
 -----
 
