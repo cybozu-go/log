@@ -156,6 +156,11 @@ func appendMsgpack(b []byte, v interface{}) ([]byte, error) {
 // https://github.com/msgpack/msgpack/blob/master/spec.md
 type MsgPack struct{}
 
+// String returns "msgpack".
+func (m MsgPack) String() string {
+	return "msgpack"
+}
+
 // Format implements Formatter.Format.
 func (m MsgPack) Format(b []byte, l *Logger, t time.Time, severity int, msg string,
 	fields map[string]interface{}) ([]byte, error) {
@@ -179,7 +184,7 @@ func (m MsgPack) Format(b []byte, l *Logger, t time.Time, severity int, msg stri
 			nFields++
 		}
 	}
-	for k := range l.defaults {
+	for k := range l.Defaults() {
 		if ReservedKey(k) {
 			continue
 		}

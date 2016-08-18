@@ -24,6 +24,9 @@ type Formatter interface {
 	// mandatory fields except for msg (and optional fields).
 	Format(buf []byte, l *Logger, t time.Time, severity int,
 		msg string, fields map[string]interface{}) ([]byte, error)
+
+	// String returns the formatter name.
+	String() string
 }
 
 // ReservedKey returns true if k is a field name reserved for log formatters.

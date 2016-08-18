@@ -13,6 +13,11 @@ import (
 // http://jsonlines.org/
 type JSONFormat struct{}
 
+// String returns "json".
+func (f JSONFormat) String() string {
+	return "json"
+}
+
 // Format implements Formatter.Format.
 func (f JSONFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 	msg string, fields map[string]interface{}) ([]byte, error) {

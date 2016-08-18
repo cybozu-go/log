@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,12 +36,13 @@ func init() {
 // Properties are initially set by NewLogger.  They can be customized
 // later by Logger methods.
 type Logger struct {
-	mu        sync.RWMutex
-	topic     string
-	threshold int
-	defaults  map[string]interface{}
-	format    Formatter
-	output    io.Writer
+	topic     atomic.Value
+	threshold int32
+	defaults  atomic.Value
+	format    atomic.Value
+
+	mu     sync.Mutex
+	output io.Writer
 }
 
 // NewLogger constructs a new Logger struct.
@@ -51,13 +53,14 @@ type Logger struct {
 //    output:    os.Stderr
 //    defaults:  no default fields.
 func NewLogger() *Logger {
-	return &Logger{
-		topic:     normalizeTopic(path.Base(os.Args[0])),
-		threshold: LvInfo,
-		defaults:  nil,
-		format:    PlainFormat{},
-		output:    os.Stderr,
+	l := &Logger{
+		output: os.Stderr,
 	}
+	l.SetTopic(normalizeTopic(path.Base(os.Args[0])))
+	l.SetThreshold(LvInfo)
+	l.SetDefaults(nil)
+	l.SetFormatter(PlainFormat{})
+	return l
 }
 
 func normalizeTopic(n string) string {
@@ -84,10 +87,7 @@ func normalizeTopic(n string) string {
 
 // Topic returns the topic for the logger.
 func (l *Logger) Topic() string {
-	l.mu.RLock()
-	topic := l.topic
-	l.mu.RUnlock()
-	return topic
+	return l.topic.Load().(string)
 }
 
 // SetTopic sets a new topic for the logger.
@@ -98,16 +98,13 @@ func (l *Logger) SetTopic(topic string) {
 	}
 
 	l.mu.Lock()
-	l.topic = normalizeTopic(topic)
+	l.topic.Store(topic)
 	l.mu.Unlock()
 }
 
 // Threshold returns the current threshold of the logger.
 func (l *Logger) Threshold() int {
-	l.mu.RLock()
-	th := l.threshold
-	l.mu.RUnlock()
-	return th
+	return int(atomic.LoadInt32(&l.threshold))
 }
 
 // Enabled returns true if the log for the given level will be logged.
@@ -119,17 +116,14 @@ func (l *Logger) Threshold() int {
 //        })
 //    }
 func (l *Logger) Enabled(level int) bool {
-	l.mu.RLock()
-	enabled := (level <= l.threshold)
-	l.mu.RUnlock()
-	return enabled
+	return level <= l.Threshold()
 }
 
 // SetThreshold sets the threshold for the logger.
 // level must be a pre-defined constant such as LvInfo.
 func (l *Logger) SetThreshold(level int) {
 	l.mu.Lock()
-	l.threshold = level
+	atomic.StoreInt32(&l.threshold, int32(level))
 	l.mu.Unlock()
 }
 
@@ -164,24 +158,26 @@ func (l *Logger) SetDefaults(d map[string]interface{}) error {
 	}
 
 	l.mu.Lock()
-	l.defaults = d
+	l.defaults.Store(d)
 	l.mu.Unlock()
 	return nil
 }
 
 // Defaults returns default field values.
 func (l *Logger) Defaults() map[string]interface{} {
-	l.mu.RLock()
-	defaults := l.defaults
-	l.mu.RUnlock()
-	return defaults
+	return l.defaults.Load().(map[string]interface{})
 }
 
 // SetFormatter sets log formatter.
 func (l *Logger) SetFormatter(f Formatter) {
 	l.mu.Lock()
-	l.format = f
+	l.format.Store(&f)
 	l.mu.Unlock()
+}
+
+// Formatter returns the current log formatter.
+func (l *Logger) Formatter() Formatter {
+	return *l.format.Load().(*Formatter)
 }
 
 // SetOutput sets io.Writer for log output.
@@ -225,7 +221,7 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 	defer pool.Put(buf)
 
 	if l.output != nil {
-		b, err := l.format.Format(buf, l, t, severity, msg, fields)
+		b, err := l.Formatter().Format(buf, l, t, severity, msg, fields)
 		if err != nil {
 			return err
 		}

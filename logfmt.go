@@ -14,6 +14,11 @@ import (
 // https://gist.github.com/kr/0e8d5ee4b954ce604bb2
 type Logfmt struct{}
 
+// String returns "logfmt".
+func (f Logfmt) String() string {
+	return "logfmt"
+}
+
 // Format implements Formatter.Format.
 func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 	msg string, fields map[string]interface{}) ([]byte, error) {

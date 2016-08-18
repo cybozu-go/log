@@ -14,6 +14,11 @@ import (
 // DATETIME SEVERITY UTSNAME TOPIC MESSAGE [OPTIONAL FIELDS...]
 type PlainFormat struct{}
 
+// String returns "plain".
+func (f PlainFormat) String() string {
+	return "plain"
+}
+
 // Format implements Formatter.Format.
 func (f PlainFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 	msg string, fields map[string]interface{}) ([]byte, error) {
