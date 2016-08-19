@@ -46,12 +46,13 @@ type Logger struct {
 }
 
 // NewLogger constructs a new Logger struct.
-// The struct is initialized as follows:
-//    topic:        the program name normalized for tag spec.
-//    threshold: LvInfo, i.e., debug logs are disabled.
-//    format:    PlainFormat
-//    output:    os.Stderr
-//    defaults:  no default fields.
+//
+// Attributes are initialized as follows:
+//    Topic:     path.Base(os.Args[0])
+//    Threshold: LvInfo
+//    Formatter: PlainFormat
+//    Output:    os.Stderr
+//    Defaults:  nil
 func NewLogger() *Logger {
 	l := &Logger{
 		output: os.Stderr,
