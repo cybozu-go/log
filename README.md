@@ -42,6 +42,11 @@ Usage
 
 Read [the documentation][godoc].
 
+Log structure
+-------------
+
+Read [SPEC.md](SPEC.md).
+
 License
 -------
 
