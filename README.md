@@ -52,6 +52,7 @@ License
 
 [MIT](https://opensource.org/licenses/MIT)
 
+[releases]: https://github.com/cybozu-go/log/releases
 [logfmt]: https://brandur.org/logfmt
 [jsonl]: http://jsonlines.org/
 [golog]: https://golang.org/pkg/log/
