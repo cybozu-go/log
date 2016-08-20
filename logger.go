@@ -1,7 +1,7 @@
 package log
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -189,25 +189,59 @@ func (l *Logger) SetOutput(w io.Writer) {
 	l.mu.Unlock()
 }
 
+type logWriter struct {
+	buf     []byte
+	logfunc func(p []byte) (n int, err error)
+}
+
+func (w *logWriter) Write(p []byte) (n int, err error) {
+	tbuf := p
+	if len(w.buf) > 0 {
+		tbuf = append(w.buf, p...)
+	}
+	written, err := w.logfunc(tbuf)
+	n = written - len(w.buf)
+	if err != nil {
+		return
+	}
+
+	w.buf = w.buf[:0]
+	remain := len(tbuf) - written
+	if remain == 0 {
+		return
+	}
+	if cap(w.buf) < remain {
+		return n, errors.New("too long")
+	}
+	w.buf = append(w.buf, tbuf[n:]...)
+	return len(p), nil
+}
+
 // Writer returns an io.Writer.
 // Each line written in the writer will be logged to the logger
 // with the given severity.
 func (l *Logger) Writer(severity int) io.Writer {
-	r, w := io.Pipe()
-
-	go func() {
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			if err := l.Log(severity, scanner.Text(), nil); err != nil {
-				r.CloseWithError(err)
+	logfunc := func(p []byte) (n int, err error) {
+		for len(p) > 0 {
+			eol := bytes.IndexByte(p, '\n')
+			if eol == -1 {
+				return
 			}
+			ln := eol + 1
+			err = l.Log(severity, string(p[:eol]), nil)
+			if err != nil {
+				return
+			}
+			n += ln
+			p = p[ln:]
 		}
-		if err := scanner.Err(); err != nil {
-			r.CloseWithError(err)
-		}
-	}()
+		return
+	}
 
-	return w
+	return &logWriter{
+		buf:     make([]byte, 0, maxLogSize/2),
+		logfunc: logfunc,
+	}
 }
 
 // Log outputs a log message with additional fields.
