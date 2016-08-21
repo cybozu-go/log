@@ -194,21 +194,24 @@ type logWriter struct {
 	logfunc func(p []byte) (n int, err error)
 }
 
-func (w *logWriter) Write(p []byte) (n int, err error) {
+func (w *logWriter) Write(p []byte) (int, error) {
 	tbuf := p
 	if len(w.buf) > 0 {
 		tbuf = append(w.buf, p...)
 	}
 	written, err := w.logfunc(tbuf)
-	n = written - len(w.buf)
+	n := written - len(w.buf)
 	if err != nil {
-		return
+		if n < 0 {
+			return 0, err
+		}
+		return n, err
 	}
 
 	w.buf = w.buf[:0]
 	remain := len(tbuf) - written
 	if remain == 0 {
-		return
+		return n, nil
 	}
 	if cap(w.buf) < remain {
 		return n, errors.New("too long")
