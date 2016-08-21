@@ -64,12 +64,14 @@ func TestFileReopener(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
+	defer os.Remove(f.Name())
 
 	g, err := ioutil.TempFile("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
 	g.Close()
+	defer os.Remove(g.Name())
 
 	w, err := NewFileReopener(f.Name(), syscall.SIGUSR2)
 	if err != nil {
@@ -128,12 +130,14 @@ func TestFileReopenerCorrection(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
+	defer os.Remove(f.Name())
 
 	g, err := ioutil.TempFile("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
 	g.Close()
+	defer os.Remove(g.Name())
 
 	w, err := NewFileReopener(f.Name(), syscall.SIGHUP)
 	if err != nil {
