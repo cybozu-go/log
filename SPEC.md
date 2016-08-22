@@ -22,7 +22,7 @@ These keys are defined as standard.
 | utsname | string | yes | Hostname. |
 | message | string | yes | Log message. |
 | secret | bool | no | `true` if the log contains secrets. |
-| type | string | no | Type of logs.  Currently, only "access" is defined. |
+| type | string | no | Type of logs.  See the next section. |
 | request_id | string | no | UUID for request tracking. |
 | response_time | float64 | no | Seconds elapsed. |
 | remote_ipaddr | string | no | Remote IP address. |
@@ -35,6 +35,22 @@ These keys are defined as standard.
 | http_user_agent | string | no | HTTP User-Agent header value. |
 | request_size | int | no | Request size in bytes. |
 | response_size | int | no | Response size in bytes. |
+
+### Log types
+
+Following is the current list of log types:
+
+- "access"
+
+    HTTP server access log.
+
+- "exec"
+
+    Command execution results.
+
+- "http"
+
+    HTTP client request log.
 
 Optional keys
 -------------
