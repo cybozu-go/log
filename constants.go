@@ -9,7 +9,7 @@ const (
 	FnMessage        = "message"
 	FnSecret         = "secret"
 	FnType           = "type"
-	FnRequestID      = "id"
+	FnRequestID      = "request_id"
 	FnResponseTime   = "response_time"
 	FnRemoteAddress  = "remote_ipaddr"
 	FnURL            = "url"

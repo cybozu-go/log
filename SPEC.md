@@ -23,7 +23,7 @@ These keys are defined as standard.
 | message | string | yes | Log message. |
 | secret | bool | no | `true` if the log contains secrets. |
 | type | string | no | Type of logs.  Currently, only "access" is defined. |
-| id | string | no | UUID for request or operation tracking. |
+| request_id | string | no | UUID for request tracking. |
 | response_time | float64 | no | Seconds elapsed. |
 | remote_ipaddr | string | no | Remote IP address. |
 | url | string | no | Request URI. |
