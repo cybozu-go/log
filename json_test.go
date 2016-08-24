@@ -93,7 +93,8 @@ func TestJSONFormat(t *testing.T) {
 	}
 
 	b, err = f.Format(buf, l, ts, LvDebug, "fuga fuga", map[string]interface{}{
-		"abc": []int{1, 2, 3},
+		"abc":     []int{1, 2, 3},
+		"invalid": "12\xc534",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -137,6 +138,14 @@ func TestJSONFormat(t *testing.T) {
 	} else {
 		if !v.(bool) {
 			t.Error(`!v.(bool)`)
+		}
+	}
+
+	if v, ok := j["invalid"]; !ok {
+		t.Error(`v, ok := j["invalid"]; !ok`)
+	} else {
+		if v.(string) != "12\uFFFD34" {
+			t.Error(`v.(string) != "12\uFFFD34"`)
 		}
 	}
 }

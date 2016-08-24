@@ -177,7 +177,8 @@ func appendPlain(buf []byte, v interface{}) ([]byte, error) {
 		return strconv.AppendFloat(buf, t, 'f', -1, 64), nil
 	case string:
 		if !utf8.ValidString(t) {
-			return nil, ErrInvalidData
+			// the next line replaces invalid characters.
+			t = string([]rune(t))
 		}
 		// escaped length = 2*len(t) + 2 double quotes
 		if cap(buf) < (len(t)*2 + 2) {
