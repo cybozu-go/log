@@ -28,6 +28,7 @@ const (
 	FnBrowser        = "browser"
 	FnServiceSet     = "serviceset"
 	FnStartAt        = "start_at"
+	FnError          = "error"
 )
 
 // Severities a.k.a log levels.
