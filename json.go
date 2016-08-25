@@ -196,6 +196,12 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 		if cap(buf) < len(s) {
 			return nil, ErrTooLarge
 		}
+		// normalize for JSON Lines
+		for i, b := range s {
+			if b == '\n' || b == '\r' {
+				s[i] = ' '
+			}
+		}
 		return append(buf, s...), nil
 	case encoding.TextMarshaler:
 		// TextMarshaler encodes into UTF-8 string.

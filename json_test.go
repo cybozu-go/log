@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -16,7 +17,7 @@ func (t testTextMarshal) MarshalText() ([]byte, error) {
 type testJSONMarshal struct{}
 
 func (t testJSONMarshal) MarshalJSON() ([]byte, error) {
-	return []byte(`"a\", b, c"`), nil
+	return []byte(`"a\", b, c"` + " \r\n "), nil
 }
 
 type testError struct{}
@@ -122,6 +123,10 @@ func TestJSONFormat(t *testing.T) {
 	}
 	if len(b) == 0 || b[len(b)-1] != '\n' {
 		t.Error(`len(b) == 0 || b[len(b)-1] != '\n'`)
+	}
+	// JSON Lines must not contain \n
+	if bytes.ContainsAny(b[:len(b)-1], "\r\n") {
+		t.Error(`bytes.ContainsAny(b[:len(b)-1], "\r\n")`)
 	}
 	j = nil
 	err = json.Unmarshal(b, &j)
