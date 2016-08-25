@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changed
+- These interfaces are formatted nicer in logs.
+    - [`encoding.TextMarshaler`](https://golang.org/pkg/encoding/#TextMarshaler)
+    - [`json.Marshaler`](https://golang.org/pkg/encoding/json/#Marshaler)
+    - [`error`](https://golang.org/pkg/builtin/#error)
 
 ## [1.1.1] - 2016-08-24
 ### Added
