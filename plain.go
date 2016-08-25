@@ -1,6 +1,7 @@
 package log
 
 import (
+	"encoding"
 	"fmt"
 	"sort"
 	"strconv"
@@ -185,6 +186,27 @@ func appendPlain(buf []byte, v interface{}) ([]byte, error) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, t), nil
+	case encoding.TextMarshaler:
+		// TextMarshaler encodes into UTF-8 string.
+		s, err := t.MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		if cap(buf) < (len(s)*2 + 2) {
+			return nil, ErrTooLarge
+		}
+		return strconv.AppendQuote(buf, string(s)), nil
+	case error:
+		s := t.Error()
+		if !utf8.ValidString(s) {
+			// the next line replaces invalid characters.
+			s = string([]rune(s))
+		}
+		// escaped length = 2*len(s) + 2 double quotes
+		if cap(buf) < (len(s)*2 + 2) {
+			return nil, ErrTooLarge
+		}
+		return strconv.AppendQuote(buf, s), nil
 	default:
 		// other types are just formatted as string with "%v".
 		return appendPlain(buf, fmt.Sprintf("%v", t))

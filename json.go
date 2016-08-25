@@ -1,6 +1,8 @@
 package log
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -186,6 +188,36 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, t), nil
+	case json.Marshaler:
+		s, err := t.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		if cap(buf) < len(s) {
+			return nil, ErrTooLarge
+		}
+		return append(buf, s...), nil
+	case encoding.TextMarshaler:
+		// TextMarshaler encodes into UTF-8 string.
+		s, err := t.MarshalText()
+		if err != nil {
+			return nil, err
+		}
+		if cap(buf) < (len(s)*2 + 2) {
+			return nil, ErrTooLarge
+		}
+		return strconv.AppendQuote(buf, string(s)), nil
+	case error:
+		s := t.Error()
+		if !utf8.ValidString(s) {
+			// the next line replaces invalid characters.
+			s = string([]rune(s))
+		}
+		// escaped length = 2*len(s) + 2 double quotes
+		if cap(buf) < (len(s)*2 + 2) {
+			return nil, ErrTooLarge
+		}
+		return strconv.AppendQuote(buf, s), nil
 	}
 
 	value := reflect.ValueOf(v)

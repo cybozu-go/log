@@ -7,6 +7,24 @@ import (
 	"time"
 )
 
+type testTextMarshal struct{}
+
+func (t testTextMarshal) MarshalText() ([]byte, error) {
+	return []byte(`a", b, c`), nil
+}
+
+type testJSONMarshal struct{}
+
+func (t testJSONMarshal) MarshalJSON() ([]byte, error) {
+	return []byte(`"a\", b, c"`), nil
+}
+
+type testError struct{}
+
+func (t testError) Error() string {
+	return `a", b, c`
+}
+
 func TestJSONFormat(t *testing.T) {
 	t.Parallel()
 
@@ -95,6 +113,9 @@ func TestJSONFormat(t *testing.T) {
 	b, err = f.Format(buf, l, ts, LvDebug, "fuga fuga", map[string]interface{}{
 		"abc":     []int{1, 2, 3},
 		"invalid": "12\xc534",
+		"tm":      testTextMarshal{},
+		"jm":      testJSONMarshal{},
+		"err":     testError{},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -146,6 +167,30 @@ func TestJSONFormat(t *testing.T) {
 	} else {
 		if v.(string) != "12\uFFFD34" {
 			t.Error(`v.(string) != "12\uFFFD34"`)
+		}
+	}
+
+	if v, ok := j["tm"]; !ok {
+		t.Error(`v, ok := j["tm"]; !ok`)
+	} else {
+		if v.(string) != `a", b, c` {
+			t.Error("v.(string) != `a\", b, c`")
+		}
+	}
+
+	if v, ok := j["jm"]; !ok {
+		t.Error(`v, ok := j["jm"]; !ok`)
+	} else {
+		if v.(string) != `a", b, c` {
+			t.Error("v.(string) != `a\", b, c`")
+		}
+	}
+
+	if v, ok := j["err"]; !ok {
+		t.Error(`v, ok := j["err"]; !ok`)
+	} else {
+		if v.(string) != `a", b, c` {
+			t.Error("v.(string) != `a\", b, c`")
 		}
 	}
 }
