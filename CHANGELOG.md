@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- `Logger.WriteThrough` to write arbitrary bytes to the underlying writer.
 
 ## [1.1.2] - 2016-08-25
 ### Changed

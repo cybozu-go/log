@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -96,5 +97,29 @@ func TestLogger(t *testing.T) {
 		if !strings.Contains(s, `custom=10000`) {
 			t.Error("failed to specify custom field")
 		}
+	}
+}
+
+func TestWriteThrough(t *testing.T) {
+	logger := NewLogger()
+	buf := new(bytes.Buffer)
+	logger.SetOutput(buf)
+
+	abc := []byte("abc\ndef\n")
+	var wg sync.WaitGroup
+	wg.Add(8)
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.WriteThrough(abc); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	go func() { logger.Error("hoge", nil); wg.Done() }()
+	wg.Wait()
+
+	data := buf.Bytes()
+	if !bytes.Contains(data, abc) {
+		t.Error(`!bytes.Contains(data, []byte("abc\ndef\n"))`)
 	}
 }

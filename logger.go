@@ -304,3 +304,11 @@ func (l *Logger) Info(msg string, fields map[string]interface{}) error {
 func (l *Logger) Debug(msg string, fields map[string]interface{}) error {
 	return l.Log(LvDebug, msg, fields)
 }
+
+// WriteThrough writes data through to the underlying writer.
+func (l *Logger) WriteThrough(data []byte) error {
+	l.mu.Lock()
+	_, err := l.output.Write(data)
+	l.mu.Unlock()
+	return err
+}
