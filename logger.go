@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -57,7 +58,13 @@ func NewLogger() *Logger {
 	l := &Logger{
 		output: os.Stderr,
 	}
-	l.SetTopic(normalizeTopic(path.Base(os.Args[0])))
+	filename := filepath.Base(os.Args[0])
+	if runtime.GOOS == "windows" {
+		if ext := filepath.Ext(filename); ext != "" {
+			filename = filename[:len(filename)-len(ext)]
+		}
+	}
+	l.SetTopic(normalizeTopic(filename))
 	l.SetThreshold(LvInfo)
 	l.SetDefaults(nil)
 	l.SetFormatter(PlainFormat{})
