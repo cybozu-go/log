@@ -18,7 +18,10 @@ Features
 * Light-weight.
 
     Hard-coded maximum log buffer size and 1-pass formatters
-    help cybozu/log be memory- and CPU- efficient.
+    help cybozu-go/log be memory- and CPU- efficient.
+
+    [Benchmark results](https://github.com/cybozu-go/log/commit/77006d9e5ed4094bf5b8e194dc659b60aeea3e03)
+    show that it can format about 340K logs per second in JSON.
 
 * Built-in logfmt and JSON Lines formatters.
 
