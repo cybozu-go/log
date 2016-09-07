@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Changed
 - Fix Windows support by [@mattn](https://github.com/mattn).
+- Fix data races in tests.
+- Formatters now have an optional `Utsname` field.
 
 ## [1.2.0] - 2016-08-26
 ### Added
