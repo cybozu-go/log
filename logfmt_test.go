@@ -76,13 +76,11 @@ func TestAppendLogfmt(t *testing.T) {
 func TestLogfmt1(t *testing.T) {
 	t.Parallel()
 
-	utsname = "localhost"
-
 	l := NewLogger()
 	l.SetTopic("tag1")
 
 	ts := time.Date(2001, time.December, 3, 13, 45, 1, 123456789, time.UTC)
-	f := Logfmt{}
+	f := Logfmt{"localhost"}
 	b := make([]byte, 0, 4096)
 
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
@@ -108,14 +106,12 @@ func TestLogfmt1(t *testing.T) {
 func TestLogfmt2(t *testing.T) {
 	t.Parallel()
 
-	utsname = "localhost"
-
 	l := NewLogger()
 	l.SetTopic("tag2")
 	l.SetDefaults(map[string]interface{}{FnSecret: true})
 
 	ts := time.Date(2001, time.December, 3, 13, 45, 1, 123456789, time.UTC)
-	f := Logfmt{}
+	f := Logfmt{"localhost"}
 	b := make([]byte, 0, 4096)
 
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {

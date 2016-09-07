@@ -13,7 +13,12 @@ import (
 //
 // A plain log message looks like:
 // DATETIME SEVERITY UTSNAME TOPIC MESSAGE [OPTIONAL FIELDS...]
-type PlainFormat struct{}
+type PlainFormat struct {
+	// Utsname can normally be left blank.
+	// If not empty, the string is used instead of the hostname.
+	// Utsname must match this regexp: ^[a-z][a-z0-9-]*$
+	Utsname string
+}
 
 // String returns "plain".
 func (f PlainFormat) String() string {
@@ -28,7 +33,11 @@ func (f PlainFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 	// assume enough capacity for mandatory fields (except for msg).
 	buf = t.UTC().AppendFormat(buf, RFC3339Micro)
 	buf = append(buf, ' ')
-	buf = append(buf, utsname...)
+	if len(f.Utsname) > 0 {
+		buf = append(buf, f.Utsname...)
+	} else {
+		buf = append(buf, utsname...)
+	}
 	buf = append(buf, ' ')
 	buf = append(buf, l.Topic()...)
 	buf = append(buf, ' ')

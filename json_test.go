@@ -29,8 +29,6 @@ func (t testError) Error() string {
 func TestJSONFormat(t *testing.T) {
 	t.Parallel()
 
-	utsname = "localhost"
-
 	l := NewLogger()
 	l.SetTopic("topic1")
 	l.SetDefaults(map[string]interface{}{
@@ -39,7 +37,7 @@ func TestJSONFormat(t *testing.T) {
 	})
 
 	ts := time.Date(2001, time.December, 3, 13, 45, 1, 123456789, time.UTC)
-	f := JSONFormat{}
+	f := JSONFormat{"localhost"}
 	buf := make([]byte, 0, 4096)
 
 	b, err := f.Format(buf, l, ts, LvCritical, "hoge", nil)

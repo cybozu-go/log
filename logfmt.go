@@ -13,7 +13,12 @@ import (
 //
 // https://brandur.org/logfmt
 // https://gist.github.com/kr/0e8d5ee4b954ce604bb2
-type Logfmt struct{}
+type Logfmt struct {
+	// Utsname can normally be left blank.
+	// If not empty, the string is used instead of the hostname.
+	// Utsname must match this regexp: ^[a-z][a-z0-9-]*$
+	Utsname string
+}
 
 // String returns "logfmt".
 func (f Logfmt) String() string {
@@ -37,7 +42,11 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 		buf = strconv.AppendInt(buf, int64(severity), 10)
 	}
 	buf = append(buf, " utsname="...)
-	buf = append(buf, utsname...)
+	if len(f.Utsname) > 0 {
+		buf = append(buf, f.Utsname...)
+	} else {
+		buf = append(buf, utsname...)
+	}
 	buf = append(buf, " message="...)
 	buf, err = appendLogfmt(buf, msg)
 	if err != nil {

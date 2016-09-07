@@ -154,7 +154,12 @@ func appendMsgpack(b []byte, v interface{}) ([]byte, error) {
 // MsgPack implements Formatter for msgpack format.
 //
 // https://github.com/msgpack/msgpack/blob/master/spec.md
-type MsgPack struct{}
+type MsgPack struct {
+	// Utsname can normally be left blank.
+	// If not empty, the string is used instead of the hostname.
+	// Utsname must match this regexp: ^[a-z][a-z0-9-]*$
+	Utsname string
+}
 
 // String returns "msgpack".
 func (m MsgPack) String() string {
@@ -229,7 +234,11 @@ func (m MsgPack) Format(b []byte, l *Logger, t time.Time, severity int, msg stri
 	if err != nil {
 		return nil, err
 	}
-	b, err = appendMsgpack(b, utsname)
+	if len(m.Utsname) > 0 {
+		b, err = appendMsgpack(b, m.Utsname)
+	} else {
+		b, err = appendMsgpack(b, utsname)
+	}
 	if err != nil {
 		return nil, err
 	}

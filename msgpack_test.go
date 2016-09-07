@@ -145,12 +145,11 @@ func TestAppendMsgpack(t *testing.T) {
 func TestMsgpackFmt1(t *testing.T) {
 	t.Parallel()
 
-	utsname = "localhost"
 	l := NewLogger()
 	l.SetTopic("tag1")
 
 	ts := time.Date(1970, time.January, 1, 0, 0, 10, 32000, time.UTC)
-	f := MsgPack{}
+	f := MsgPack{"localhost"}
 	b := make([]byte, 0, 4096)
 
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
@@ -166,14 +165,12 @@ func TestMsgpackFmt1(t *testing.T) {
 func TestMsgpackFmt2(t *testing.T) {
 	t.Parallel()
 
-	utsname = "localhost"
-
 	l := NewLogger()
 	l.SetTopic("tag2")
 	l.SetDefaults(map[string]interface{}{FnSecret: true})
 
 	ts := time.Date(1970, time.January, 1, 0, 0, 10, 32000, time.UTC)
-	f := MsgPack{}
+	f := MsgPack{"localhost"}
 	b := make([]byte, 0, 4096)
 
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {

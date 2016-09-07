@@ -13,7 +13,12 @@ import (
 // JSONFormat implements Formatter for JSON Lines.
 //
 // http://jsonlines.org/
-type JSONFormat struct{}
+type JSONFormat struct {
+	// Utsname can normally be left blank.
+	// If not empty, the string is used instead of the hostname.
+	// Utsname must match this regexp: ^[a-z][a-z0-9-]*$
+	Utsname string
+}
 
 // String returns "json".
 func (f JSONFormat) String() string {
@@ -39,7 +44,11 @@ func (f JSONFormat) Format(buf []byte, l *Logger, t time.Time, severity int,
 		buf = strconv.AppendInt(buf, int64(severity), 10)
 	}
 	buf = append(buf, `,"utsname":"`...)
-	buf = append(buf, utsname...)
+	if len(f.Utsname) > 0 {
+		buf = append(buf, f.Utsname...)
+	} else {
+		buf = append(buf, utsname...)
+	}
 	buf = append(buf, `","message":`...)
 	buf, err = appendJSON(buf, msg)
 	if err != nil {
