@@ -105,9 +105,7 @@ func (l *Logger) SetTopic(topic string) {
 		panic("Empty tag")
 	}
 
-	l.mu.Lock()
 	l.topic.Store(topic)
-	l.mu.Unlock()
 }
 
 // Threshold returns the current threshold of the logger.
@@ -130,9 +128,7 @@ func (l *Logger) Enabled(level int) bool {
 // SetThreshold sets the threshold for the logger.
 // level must be a pre-defined constant such as LvInfo.
 func (l *Logger) SetThreshold(level int) {
-	l.mu.Lock()
 	atomic.StoreInt32(&l.threshold, int32(level))
-	l.mu.Unlock()
 }
 
 // SetThresholdByName sets the threshold for the logger by the level name.
@@ -165,9 +161,7 @@ func (l *Logger) SetDefaults(d map[string]interface{}) error {
 		}
 	}
 
-	l.mu.Lock()
 	l.defaults.Store(d)
-	l.mu.Unlock()
 	return nil
 }
 
@@ -178,9 +172,7 @@ func (l *Logger) Defaults() map[string]interface{} {
 
 // SetFormatter sets log formatter.
 func (l *Logger) SetFormatter(f Formatter) {
-	l.mu.Lock()
 	l.format.Store(&f)
-	l.mu.Unlock()
 }
 
 // Formatter returns the current log formatter.
