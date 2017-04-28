@@ -187,17 +187,17 @@ func (l *Logger) Formatter() Formatter {
 //
 // The handler will be called if the underlying Writer's Write
 // returns non-nil error.  If h is nil, no handler will be called.
-func (l *Logger) SetErrorHandler(h func(err error)) {
+func (l *Logger) SetErrorHandler(h func(error) error) {
 	l.errorHandler.Store(h)
 }
 
 // Formatter returns the current log formatter.
-func (l *Logger) handleError(err error) {
-	h := l.errorHandler.Load().(func(err error))
+func (l *Logger) handleError(err error) error {
+	h := l.errorHandler.Load().(func(error) error)
 	if h == nil {
-		return
+		return err
 	}
-	h(err)
+	return h(err)
 }
 
 // SetOutput sets io.Writer for log output.
@@ -286,9 +286,10 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 		l.mu.Lock()
 		defer l.mu.Unlock()
 		if _, err := l.output.Write(b); err != nil {
-			l.handleError(err)
-			fmt.Fprintf(os.Stderr, "logger output causes an error: %v\n", err)
-			return errors.Wrap(err, "Logger.Log")
+			err = l.handleError(err)
+			if err != nil {
+				return errors.Wrap(err, "Logger.Log")
+			}
 		}
 	}
 
