@@ -37,10 +37,11 @@ func init() {
 // Properties are initially set by NewLogger.  They can be customized
 // later by Logger methods.
 type Logger struct {
-	topic     atomic.Value
-	threshold int32
-	defaults  atomic.Value
-	format    atomic.Value
+	topic        atomic.Value
+	threshold    int32
+	defaults     atomic.Value
+	format       atomic.Value
+	errorHandler atomic.Value
 
 	mu     sync.Mutex
 	output io.Writer
@@ -49,11 +50,12 @@ type Logger struct {
 // NewLogger constructs a new Logger struct.
 //
 // Attributes are initialized as follows:
-//    Topic:     path.Base(os.Args[0])
-//    Threshold: LvInfo
-//    Formatter: PlainFormat
-//    Output:    os.Stderr
-//    Defaults:  nil
+//    Topic:        path.Base(os.Args[0])
+//    Threshold:    LvInfo
+//    Formatter:    PlainFormat
+//    Output:       os.Stderr
+//    Defaults:     nil
+//    ErrorHandler: os.Exit(5) on EPIPE.
 func NewLogger() *Logger {
 	l := &Logger{
 		output: os.Stderr,
@@ -68,6 +70,7 @@ func NewLogger() *Logger {
 	l.SetThreshold(LvInfo)
 	l.SetDefaults(nil)
 	l.SetFormatter(PlainFormat{})
+	l.SetErrorHandler(errorHandler)
 	return l
 }
 
@@ -105,9 +108,7 @@ func (l *Logger) SetTopic(topic string) {
 		panic("Empty tag")
 	}
 
-	l.mu.Lock()
 	l.topic.Store(topic)
-	l.mu.Unlock()
 }
 
 // Threshold returns the current threshold of the logger.
@@ -130,9 +131,7 @@ func (l *Logger) Enabled(level int) bool {
 // SetThreshold sets the threshold for the logger.
 // level must be a pre-defined constant such as LvInfo.
 func (l *Logger) SetThreshold(level int) {
-	l.mu.Lock()
 	atomic.StoreInt32(&l.threshold, int32(level))
-	l.mu.Unlock()
 }
 
 // SetThresholdByName sets the threshold for the logger by the level name.
@@ -165,9 +164,7 @@ func (l *Logger) SetDefaults(d map[string]interface{}) error {
 		}
 	}
 
-	l.mu.Lock()
 	l.defaults.Store(d)
-	l.mu.Unlock()
 	return nil
 }
 
@@ -178,14 +175,29 @@ func (l *Logger) Defaults() map[string]interface{} {
 
 // SetFormatter sets log formatter.
 func (l *Logger) SetFormatter(f Formatter) {
-	l.mu.Lock()
 	l.format.Store(&f)
-	l.mu.Unlock()
 }
 
 // Formatter returns the current log formatter.
 func (l *Logger) Formatter() Formatter {
 	return *l.format.Load().(*Formatter)
+}
+
+// SetErrorHandler sets error handler.
+//
+// The handler will be called if the underlying Writer's Write
+// returns non-nil error.  If h is nil, no handler will be called.
+func (l *Logger) SetErrorHandler(h func(error) error) {
+	l.errorHandler.Store(h)
+}
+
+// Formatter returns the current log formatter.
+func (l *Logger) handleError(err error) error {
+	h := l.errorHandler.Load().(func(error) error)
+	if h == nil {
+		return err
+	}
+	return h(err)
 }
 
 // SetOutput sets io.Writer for log output.
@@ -274,8 +286,10 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 		l.mu.Lock()
 		defer l.mu.Unlock()
 		if _, err := l.output.Write(b); err != nil {
-			fmt.Fprintf(os.Stderr, "logger output causes an error: %v", err)
-			return errors.Wrap(err, "Logger.Log")
+			err = l.handleError(err)
+			if err != nil {
+				return errors.Wrap(err, "Logger.Log")
+			}
 		}
 	}
 

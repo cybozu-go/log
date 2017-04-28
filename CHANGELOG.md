@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+- `Logger.SetErrorHandler` to change error handler function.
+
+### Changed
+- Logger has a default error handler that exits with status 5 on EPIPE (#11).
 
 ## [1.3.0] - 2016-09-10
 ### Changed
