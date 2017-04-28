@@ -37,10 +37,11 @@ func init() {
 // Properties are initially set by NewLogger.  They can be customized
 // later by Logger methods.
 type Logger struct {
-	topic     atomic.Value
-	threshold int32
-	defaults  atomic.Value
-	format    atomic.Value
+	topic        atomic.Value
+	threshold    int32
+	defaults     atomic.Value
+	format       atomic.Value
+	errorHandler atomic.Value
 
 	mu     sync.Mutex
 	output io.Writer
@@ -49,11 +50,12 @@ type Logger struct {
 // NewLogger constructs a new Logger struct.
 //
 // Attributes are initialized as follows:
-//    Topic:     path.Base(os.Args[0])
-//    Threshold: LvInfo
-//    Formatter: PlainFormat
-//    Output:    os.Stderr
-//    Defaults:  nil
+//    Topic:        path.Base(os.Args[0])
+//    Threshold:    LvInfo
+//    Formatter:    PlainFormat
+//    Output:       os.Stderr
+//    Defaults:     nil
+//    ErrorHandler: os.Exit(5) on EPIPE.
 func NewLogger() *Logger {
 	l := &Logger{
 		output: os.Stderr,
@@ -68,6 +70,7 @@ func NewLogger() *Logger {
 	l.SetThreshold(LvInfo)
 	l.SetDefaults(nil)
 	l.SetFormatter(PlainFormat{})
+	l.SetErrorHandler(errorHandler)
 	return l
 }
 
@@ -180,6 +183,23 @@ func (l *Logger) Formatter() Formatter {
 	return *l.format.Load().(*Formatter)
 }
 
+// SetErrorHandler sets error handler.
+//
+// The handler will be called if the underlying Writer's Write
+// returns non-nil error.  If h is nil, no handler will be called.
+func (l *Logger) SetErrorHandler(h func(err error)) {
+	l.errorHandler.Store(h)
+}
+
+// Formatter returns the current log formatter.
+func (l *Logger) handleError(err error) {
+	h := l.errorHandler.Load().(func(err error))
+	if h == nil {
+		return
+	}
+	h(err)
+}
+
 // SetOutput sets io.Writer for log output.
 // Setting nil disables log output.
 func (l *Logger) SetOutput(w io.Writer) {
@@ -266,7 +286,8 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 		l.mu.Lock()
 		defer l.mu.Unlock()
 		if _, err := l.output.Write(b); err != nil {
-			fmt.Fprintf(os.Stderr, "logger output causes an error: %v", err)
+			l.handleError(err)
+			fmt.Fprintf(os.Stderr, "logger output causes an error: %v\n", err)
 			return errors.Wrap(err, "Logger.Log")
 		}
 	}
