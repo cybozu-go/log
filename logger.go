@@ -273,27 +273,32 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 		return nil
 	}
 
+	// format the message before acquiring mutex for better concurrency.
 	t := time.Now()
 	buf := pool.Get().([]byte)
 	defer pool.Put(buf)
 
-	if l.output != nil {
-		b, err := l.Formatter().Format(buf, l, t, severity, msg, fields)
-		if err != nil {
-			return err
-		}
-
-		l.mu.Lock()
-		defer l.mu.Unlock()
-		if _, err := l.output.Write(b); err != nil {
-			err = l.handleError(err)
-			if err != nil {
-				return errors.Wrap(err, "Logger.Log")
-			}
-		}
+	b, err := l.Formatter().Format(buf, l, t, severity, msg, fields)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.output == nil {
+		return nil
+	}
+
+	_, err = l.output.Write(b)
+	if err == nil {
+		return nil
+	}
+	err = l.handleError(err)
+	if err == nil {
+		return nil
+	}
+	return errors.Wrap(err, "Logger.Log")
 }
 
 // Critical outputs a critical log.
