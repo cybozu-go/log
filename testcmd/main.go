@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,7 +16,15 @@ var (
 	flgIgnoreSigPipe     = flag.Bool("i", false, "ignore SIGPIPE")
 	flgClearErrorHandler = flag.Bool("c", false, "clear error handler")
 	flgStdout            = flag.Bool("s", false, "output to stdout")
+	flgWriteThrough      = flag.Bool("w", false, "use WriteThrough")
 )
+
+func printError(e error) {
+	if e == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "error: %T %#v\n", e, e)
+}
 
 func main() {
 	flag.Parse()
@@ -45,7 +54,11 @@ func main() {
 	}
 
 	for {
-		logger.Error("foo", nil)
+		if *flgWriteThrough {
+			printError(logger.WriteThrough([]byte("foo\n")))
+		} else {
+			printError(logger.Error("foo", nil))
+		}
 		time.Sleep(time.Second)
 	}
 }
