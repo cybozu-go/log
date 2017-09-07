@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.2] - 2017-09-07
+### Changed
+- Fix a bug in `Logger.Writer` (#16).
+
 ## [1.4.1] - 2017-05-08
 ### Changed
 - Call error handler in `Logger.WriteThrough` (#13).
@@ -50,7 +54,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - [Logger.Writer](https://godoc.org/github.com/cybozu-go/log#Logger.Writer) is rewritten for better performance.
 
-[Unreleased]: https://github.com/cybozu-go/log/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/cybozu-go/log/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/cybozu-go/log/compare/v1.4.0...v1.4.2
 [1.4.1]: https://github.com/cybozu-go/log/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/cybozu-go/log/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/cybozu-go/log/compare/v1.2.0...v1.3.0
