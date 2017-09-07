@@ -104,11 +104,11 @@ func TestLogger(t *testing.T) {
 type testFormat struct {
 }
 
-func (f *testFormat) String() string {
+func (f testFormat) String() string {
 	return "test"
 }
 
-func (f *testFormat) Format(buf []byte, l *Logger, t time.Time, severity int, msg string, fields map[string]interface{}) ([]byte, error) {
+func (f testFormat) Format(buf []byte, l *Logger, t time.Time, severity int, msg string, fields map[string]interface{}) ([]byte, error) {
 	return []byte(msg), nil
 }
 
@@ -116,7 +116,7 @@ func TestWriter(t *testing.T) {
 	l := NewLogger()
 	output := new(bytes.Buffer)
 	l.SetOutput(output)
-	l.SetFormatter(&testFormat{})
+	l.SetFormatter(testFormat{})
 	w := l.Writer(LvCritical)
 
 	cases := []struct {
