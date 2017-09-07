@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestNormalizeTopic(t *testing.T) {
@@ -97,6 +98,45 @@ func TestLogger(t *testing.T) {
 		if !strings.Contains(s, `custom=10000`) {
 			t.Error("failed to specify custom field")
 		}
+	}
+}
+
+type testFormat struct {
+}
+
+func (f *testFormat) String() string {
+	return "test"
+}
+
+func (f *testFormat) Format(buf []byte, l *Logger, t time.Time, severity int, msg string, fields map[string]interface{}) ([]byte, error) {
+	return []byte(msg), nil
+}
+
+func TestWriter(t *testing.T) {
+	l := NewLogger()
+	output := new(bytes.Buffer)
+	l.SetOutput(output)
+	l.SetFormatter(&testFormat{})
+	w := l.Writer(LvCritical)
+
+	cases := []struct {
+		Arg, Expected []byte
+	}{
+		{[]byte("hogehoge\nhoge"), []byte("hogehoge")},
+		{[]byte("foofoo\nfoo"), []byte("hogefoofoo")},
+		{[]byte("barbar\nbar"), []byte("foobarbar")},
+	}
+
+	for _, tc := range cases {
+		_, err := w.Write(tc.Arg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		actual := output.Bytes()
+		if bytes.Compare(actual, tc.Expected) != 0 {
+			t.Errorf("actual: %s, expected: %s\n", string(actual), string(tc.Expected))
+		}
+		output.Reset()
 	}
 }
 

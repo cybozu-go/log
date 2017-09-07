@@ -235,7 +235,7 @@ func (w *logWriter) Write(p []byte) (int, error) {
 	if cap(w.buf) < remain {
 		return n, errors.New("too long")
 	}
-	w.buf = append(w.buf, tbuf[n:]...)
+	w.buf = append(w.buf, tbuf[written:]...)
 	return len(p), nil
 }
 
