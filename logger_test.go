@@ -133,7 +133,7 @@ func TestWriter(t *testing.T) {
 			t.Fatal(err)
 		}
 		actual := output.Bytes()
-		if bytes.Compare(actual, tc.Expected) != 0 {
+		if !bytes.Equal(actual, tc.Expected) {
 			t.Errorf("actual: %s, expected: %s", string(actual), string(tc.Expected))
 		}
 		output.Reset()
