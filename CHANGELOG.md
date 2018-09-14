@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2018-09-14
 ### Added
 - Opting in to [Go modules](https://github.com/golang/go/wiki/Modules).
 
@@ -57,7 +58,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - [Logger.Writer](https://godoc.org/github.com/cybozu-go/log#Logger.Writer) is rewritten for better performance.
 
-[Unreleased]: https://github.com/cybozu-go/log/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/cybozu-go/log/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/cybozu-go/log/compare/v1.4.2...v1.5.0
 [1.4.2]: https://github.com/cybozu-go/log/compare/v1.4.0...v1.4.2
 [1.4.1]: https://github.com/cybozu-go/log/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/cybozu-go/log/compare/v1.3.0...v1.4.0
