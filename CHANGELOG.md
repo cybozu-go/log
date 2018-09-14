@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Opting in to [Go modules](https://github.com/golang/go/wiki/Modules).
+
 ## [1.4.2] - 2017-09-07
 ### Changed
 - Fix a bug in `Logger.Writer` (#16).
