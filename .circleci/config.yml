@@ -13,3 +13,8 @@ jobs:
       - run: ineffassign .
       - run: go test -race -v ./...
       - run: go vet ./...
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build
