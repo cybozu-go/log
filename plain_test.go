@@ -2,8 +2,10 @@ package log
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 func TestAppendPlain(t *testing.T) {
@@ -52,6 +54,38 @@ func TestAppendPlain(t *testing.T) {
 			t.Error(`!bytes.Contain(b, "-1")`)
 		}
 	}
+
+	invalidUtf8 := "hello" + string([]byte{0x80})
+	b, err = appendPlain(buf, invalidUtf8)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !utf8.ValidString(string(b)) {
+			t.Error(`!utf8.ValidString(b)`)
+		}
+		if bytes.Contains(b, []byte("x80")) {
+			t.Error(`bytes.Contains(b, "x80")`)
+		}
+		if !bytes.Contains(b, []byte("hello")) {
+			t.Error(`!bytes.Contains(b, "hello")`)
+		}
+	}
+
+	b, err = appendPlain(buf, fmt.Errorf(invalidUtf8))
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !utf8.ValidString(string(b)) {
+			t.Error(`!utf8.ValidString(b)`)
+		}
+		if bytes.Contains(b, []byte("x80")) {
+			t.Error(`bytes.Contains(b, "x80")`)
+		}
+		if !bytes.Contains(b, []byte("hello")) {
+			t.Error(`!bytes.Contains(b, "hello")`)
+		}
+	}
+
 }
 
 const (
