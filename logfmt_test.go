@@ -1,8 +1,11 @@
 package log
 
 import (
+	"bytes"
+	"fmt"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -70,6 +73,39 @@ func TestAppendLogfmt(t *testing.T) {
 	if string(b) != `{abc=123 "def ghi"=null}` &&
 		string(b) != `{"def ghi"=null abc=123}` {
 		t.Error("failed to format map[string]interface{}")
+	}
+
+	invalidUtf8 := "hello" + string([]byte{0x80})
+	b = b[:0]
+	b, err := appendLogfmt(b, invalidUtf8)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !utf8.ValidString(string(b)) {
+			t.Error(`!utf8.ValidString(b)`)
+		}
+		if bytes.Contains(b, []byte("x80")) {
+			t.Error(`bytes.Contains(b, "x80")`)
+		}
+		if !bytes.Contains(b, []byte("hello")) {
+			t.Error(`!bytes.Contains(b, "hello")`)
+		}
+	}
+
+	b = b[:0]
+	b, err = appendLogfmt(b, fmt.Errorf(invalidUtf8))
+	if err != nil {
+		t.Error(err)
+	} else {
+		if !utf8.ValidString(string(b)) {
+			t.Error(`!utf8.ValidString(b)`)
+		}
+		if bytes.Contains(b, []byte("x80")) {
+			t.Error(`bytes.Contains(b, "x80")`)
+		}
+		if !bytes.Contains(b, []byte("hello")) {
+			t.Error(`!bytes.Contains(b, "hello")`)
+		}
 	}
 }
 
