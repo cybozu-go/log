@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,8 +12,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -298,7 +297,7 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 	if err == nil {
 		return nil
 	}
-	return errors.Wrap(err, "Logger.Log")
+	return fmt.Errorf("Logger.Log: %w", err)
 }
 
 // Critical outputs a critical log.
@@ -344,5 +343,5 @@ func (l *Logger) WriteThrough(data []byte) error {
 	if err == nil {
 		return nil
 	}
-	return errors.Wrap(err, "Logger.WriteThrough")
+	return fmt.Errorf("Logger.WriteThrough: %w", err)
 }
