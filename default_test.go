@@ -22,7 +22,7 @@ func TestDefaultLogger(t *testing.T) {
 	if buf.Len() == 0 {
 		t.Error("failed to take Go's standard logger output")
 	} else {
-		s := string(buf.Bytes())
+		s := buf.String()
 		if !strings.Contains(s, "severity=info") {
 			t.Error("severity is not info")
 		}
@@ -33,7 +33,7 @@ func TestDefaultLogger(t *testing.T) {
 	if buf.Len() == 0 {
 		t.Error("failed to take Go's standard logger output")
 	} else {
-		s := string(buf.Bytes())
+		s := buf.String()
 		if strings.Contains(s, magicData) {
 			t.Error("logs are not separated")
 		}

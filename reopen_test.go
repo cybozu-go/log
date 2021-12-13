@@ -52,7 +52,7 @@ func TestReopenWriter(t *testing.T) {
 		t.Errorf("number of close should be 1 but %v", buf.nclose)
 	}
 	s := buf.String()
-	if "foobar1234" != s {
+	if s != "foobar1234" {
 		t.Errorf("written data should be \"foobar1234\" but \"%v\"", s)
 	}
 }
