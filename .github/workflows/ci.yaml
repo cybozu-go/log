@@ -1,0 +1,27 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+    - 'main'
+env:
+  go-version: 1.17
+  cache-version: 1
+jobs:
+  test:
+    name: Small tests
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.go-version }}
+    - run: test -z "$(gofmt -s -l . | tee /dev/stderr)"
+    - run: go build .
+    - run: go test -race -v .
+    - run: go vet .
+    - name: staticcheck
+      run: |
+        mkdir -p bin
+        GOBIN=$(pwd)/bin go install honnef.co/go/tools/cmd/staticcheck@latest
+        ./bin/staticcheck .

@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,14 +12,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 var (
 	pool = &sync.Pool{
 		New: func() interface{} {
-			return make([]byte, 0, maxLogSize)
+			b := make([]byte, 0, maxLogSize)
+			return &b
 		},
 	}
 
@@ -149,7 +149,7 @@ func (l *Logger) SetThresholdByName(n string) error {
 	case "debug":
 		level = LvDebug
 	default:
-		return fmt.Errorf("No such level: %s", n)
+		return fmt.Errorf("no such level: %s", n)
 	}
 	l.SetThreshold(level)
 	return nil
@@ -275,10 +275,10 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 
 	// format the message before acquiring mutex for better concurrency.
 	t := time.Now()
-	buf := pool.Get().([]byte)
+	buf := pool.Get().(*[]byte)
 	defer pool.Put(buf)
 
-	b, err := l.Formatter().Format(buf, l, t, severity, msg, fields)
+	b, err := l.Formatter().Format(*buf, l, t, severity, msg, fields)
 	if err != nil {
 		return err
 	}
@@ -298,7 +298,7 @@ func (l *Logger) Log(severity int, msg string, fields map[string]interface{}) er
 	if err == nil {
 		return nil
 	}
-	return errors.Wrap(err, "Logger.Log")
+	return fmt.Errorf("Logger.Log: %w", err)
 }
 
 // Critical outputs a critical log.
@@ -344,5 +344,5 @@ func (l *Logger) WriteThrough(data []byte) error {
 	if err == nil {
 		return nil
 	}
-	return errors.Wrap(err, "Logger.WriteThrough")
+	return fmt.Errorf("Logger.WriteThrough: %w", err)
 }

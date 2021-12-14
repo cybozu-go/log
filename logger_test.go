@@ -51,7 +51,7 @@ func TestLogger(t *testing.T) {
 	if buf.Len() == 0 {
 		t.Error("debug log should not be ignored")
 	} else {
-		s := string(buf.Bytes())
+		s := buf.String()
 		if !strings.Contains(s, "topic=hoge") {
 			t.Error("Invalid log: " + s)
 		}
@@ -77,7 +77,7 @@ func TestLogger(t *testing.T) {
 	if err := l.Debug("hoge", nil); err != nil {
 		t.Error(err)
 	} else {
-		s := string(buf.Bytes())
+		s := buf.String()
 		if !strings.Contains(s, `secret=true`) {
 			t.Error("failed to include default fields")
 		}
@@ -91,7 +91,7 @@ func TestLogger(t *testing.T) {
 	if err := l.Debug("hoge", fields); err != nil {
 		t.Error(err)
 	} else {
-		s := string(buf.Bytes())
+		s := buf.String()
 		if !strings.Contains(s, `secret=true`) {
 			t.Error("failed to specify fields")
 		}
