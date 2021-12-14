@@ -5,6 +5,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.1] - 2021-12-14
+### Changed
+- Remove dependency on [github.com/pkg/errors](https://github.com/pkg/errors) (#28).
+
 ## [1.6.0] - 2020-03-19
 ### Changed
 - Validate string with strings.ToValidUTF8 (#26).
@@ -62,7 +66,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - [Logger.Writer](https://godoc.org/github.com/cybozu-go/log#Logger.Writer) is rewritten for better performance.
 
-[Unreleased]: https://github.com/cybozu-go/log/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/cybozu-go/log/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/cybozu-go/log/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/cybozu-go/log/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/cybozu-go/log/compare/v1.4.2...v1.5.0
 [1.4.2]: https://github.com/cybozu-go/log/compare/v1.4.0...v1.4.2
