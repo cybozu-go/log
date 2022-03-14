@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -182,12 +183,12 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 		if cap(buf) < 256 {
 			return nil, ErrTooLarge
 		}
-		return strconv.AppendFloat(buf, float64(t), 'f', -1, 32), nil
+		return appendFloat(buf, float64(t), 32), nil
 	case float64:
 		if cap(buf) < 256 {
 			return nil, ErrTooLarge
 		}
-		return strconv.AppendFloat(buf, t, 'f', -1, 64), nil
+		return appendFloat(buf, t, 64), nil
 	case string:
 		if !utf8.ValidString(t) {
 			// the next line replaces invalid characters.
@@ -302,4 +303,16 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 
 	// other types are just formatted as a string with "%#v".
 	return appendJSON(buf, fmt.Sprintf("%#v", v))
+}
+
+func appendFloat(buf []byte, v float64, bitSize int) []byte {
+	if math.IsNaN(v) {
+		return append(buf, `"NaN"`...)
+	} else if math.IsInf(v, 1) {
+		return append(buf, `"+Inf"`...)
+	} else if math.IsInf(v, -1) {
+		return append(buf, `"-Inf"`...)
+	} else {
+		return strconv.AppendFloat(buf, v, 'f', -1, bitSize)
+	}
 }
