@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"encoding/json"
+	"math"
 	"reflect"
 	"testing"
 	"time"
@@ -111,6 +112,8 @@ func TestJSONFormat(t *testing.T) {
 
 	b, err = f.Format(buf, l, ts, LvDebug, "fuga fuga", map[string]interface{}{
 		"abc":     []int{1, 2, 3},
+		"float32": []float32{3.14159, float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1))},
+		"float64": []float64{3.14159, math.NaN(), math.Inf(1), math.Inf(-1)},
 		"invalid": "12\xc534",
 		"tm":      testTextMarshal{},
 		"jm":      testJSONMarshal{},
@@ -153,7 +156,25 @@ func TestJSONFormat(t *testing.T) {
 	} else {
 		if !reflect.DeepEqual(v.([]interface{}), []interface{}{1.0, 2.0, 3.0}) {
 			t.Error(`!reflect.DeepEqual(v.([]interface{}), []interface{}{1, 2, 3})`)
-			t.Logf("%#v", v.([]interface{}))
+			t.Logf("%#v", v)
+		}
+	}
+
+	if v, ok := j["float32"]; !ok {
+		t.Error(`v, ok := j["float32"]; !ok`)
+	} else {
+		if !reflect.DeepEqual(v.([]interface{}), []interface{}{3.14159, "NaN", "+Inf", "-Inf"}) {
+			t.Error(`!reflect.DeepEqual(v.([]interface{}), []interface{}{3.14159, "NaN", "+Inf", "-Inf"})`)
+			t.Logf("%#v", v)
+		}
+	}
+
+	if v, ok := j["float64"]; !ok {
+		t.Error(`v, ok := j["float64"]; !ok`)
+	} else {
+		if !reflect.DeepEqual(v.([]interface{}), []interface{}{3.14159, "NaN", "+Inf", "-Inf"}) {
+			t.Error(`!reflect.DeepEqual(v.([]interface{}), []interface{}{3.14159, "NaN", "+Inf", "-Inf"})`)
+			t.Logf("%#v", v)
 		}
 	}
 
