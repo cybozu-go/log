@@ -7,7 +7,6 @@ import (
 	"math"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -190,15 +189,11 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 		}
 		return appendFloat(buf, t, 64), nil
 	case string:
-		if !utf8.ValidString(t) {
-			// the next line replaces invalid characters.
-			t = strings.ToValidUTF8(t, string(utf8.RuneError))
-		}
 		// escaped length = 2*len(t) + 2 double quotes
 		if cap(buf) < (len(t)*2 + 2) {
 			return nil, ErrTooLarge
 		}
-		return strconv.AppendQuote(buf, t), nil
+		return appendString(buf, t), nil
 	case json.Marshaler:
 		s, err := t.MarshalJSON()
 		if err != nil {
@@ -223,18 +218,14 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 		if cap(buf) < (len(s)*2 + 2) {
 			return nil, ErrTooLarge
 		}
-		return strconv.AppendQuote(buf, string(s)), nil
+		return appendString(buf, string(s)), nil
 	case error:
 		s := t.Error()
-		if !utf8.ValidString(s) {
-			// the next line replaces invalid characters.
-			s = strings.ToValidUTF8(s, string(utf8.RuneError))
-		}
 		// escaped length = 2*len(s) + 2 double quotes
 		if cap(buf) < (len(s)*2 + 2) {
 			return nil, ErrTooLarge
 		}
-		return strconv.AppendQuote(buf, s), nil
+		return appendString(buf, s), nil
 	}
 
 	value := reflect.ValueOf(v)
@@ -315,4 +306,54 @@ func appendFloat(buf []byte, v float64, bitSize int) []byte {
 	} else {
 		return strconv.AppendFloat(buf, v, 'f', -1, bitSize)
 	}
+}
+
+// Ref: encodeState#string in encoding/json.
+func appendString(buf []byte, s string) []byte {
+	buf = append(buf, '"')
+	start := 0
+	for i := 0; i < len(s); {
+		if b := s[i]; b < utf8.RuneSelf {
+			if ' ' <= b && b <= '~' && b != '"' && b != '\\' {
+				i++
+				continue
+			}
+			if start < i {
+				buf = append(buf, s[start:i]...)
+			}
+			switch b {
+			case '\\':
+				buf = append(buf, `\\`...)
+			case '"':
+				buf = append(buf, `\"`...)
+			case '\n':
+				buf = append(buf, `\n`...)
+			case '\r':
+				buf = append(buf, `\r`...)
+			case '\t':
+				buf = append(buf, `\t`...)
+			default:
+				const hex = "0123456789abcdef"
+				buf = append(buf, '\\', 'u', '0', '0', hex[b>>4], hex[b&0xF])
+			}
+			i++
+			start = i
+			continue
+		}
+		c, size := utf8.DecodeRuneInString(s[i:])
+		if c == utf8.RuneError && size == 1 {
+			if start < i {
+				buf = append(buf, s[start:i]...)
+			}
+			buf = append(buf, `\ufffd`...)
+			i += size
+			start = i
+			continue
+		}
+		i += size
+	}
+	if start < len(s) {
+		buf = append(buf, s[start:]...)
+	}
+	return append(buf, '"')
 }

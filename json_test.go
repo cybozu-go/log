@@ -115,6 +115,7 @@ func TestJSONFormat(t *testing.T) {
 		"float32": []float32{3.14159, float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1))},
 		"float64": []float64{3.14159, math.NaN(), math.Inf(1), math.Inf(-1)},
 		"invalid": "12\xc534",
+		"escapes": "abc\x00\a\b\f\n\r\t\v\x1f \"\\'~\x7f\U0001fbffdef",
 		"tm":      testTextMarshal{},
 		"jm":      testJSONMarshal{},
 		"err":     testError{},
@@ -187,6 +188,14 @@ func TestJSONFormat(t *testing.T) {
 		t.Error(`v, ok := j["invalid"]; !ok`)
 	} else {
 		if got, want := v.(string), "12\uFFFD34"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+
+	if v, ok := j["escapes"]; !ok {
+		t.Error(`v, ok := j["escapes"]; !ok`)
+	} else {
+		if got, want := v.(string), "abc\x00\a\b\f\n\r\t\v\x1f \"\\'~\x7f\U0001fbffdef"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	}
