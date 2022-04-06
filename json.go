@@ -247,14 +247,14 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 		}
 		buf = append(buf, '{')
 		first := true
-		for _, k := range value.MapKeys() {
+		for iter := value.MapRange(); iter.Next(); {
 			if !first {
 				if cap(buf) < 1 {
 					return nil, ErrTooLarge
 				}
 				buf = append(buf, ',')
 			}
-			buf, err = appendJSON(buf, k.String())
+			buf, err = appendJSON(buf, iter.Key().String())
 			if err != nil {
 				return nil, err
 			}
@@ -262,7 +262,7 @@ func appendJSON(buf []byte, v interface{}) ([]byte, error) {
 				return nil, ErrTooLarge
 			}
 			buf = append(buf, ':')
-			buf, err = appendJSON(buf, value.MapIndex(k).Interface())
+			buf, err = appendJSON(buf, iter.Value().Interface())
 			if err != nil {
 				return nil, err
 			}
