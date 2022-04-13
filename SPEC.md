@@ -14,7 +14,7 @@ Standard keys
 
 These keys are defined as standard.
 
-| Key | Type | Mandatory | Descriptoin |
+| Key | Type | Mandatory | Description |
 | --- | ---- | --------- | ----------- |
 | topic | string | yes | Typically the program name. |
 | logged_at | string | yes | RFC3339 time in microsecond precision. |
