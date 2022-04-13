@@ -19,7 +19,7 @@ built-in formatters are available.
 
     Plain (default): syslog like text formatter.
     logfmt:          https://gist.github.com/kr/0e8d5ee4b954ce604bb2
-    JSON Lines:      http://jsonlines.org/
+    JSON Lines:      https://jsonlines.org/
 
 The standard field names are defined as constants in this package.
 For example, "secret" is defined as FnSecret.

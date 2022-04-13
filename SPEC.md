@@ -84,4 +84,4 @@ where `$key` is the value of `key`.
 
 "json" is implemented by `JSONFormat`.
 
-`JSONFormat` conforms to [JSON Lines](http://jsonlines.org/).
+`JSONFormat` conforms to [JSON Lines](https://jsonlines.org/).
