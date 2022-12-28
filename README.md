@@ -56,5 +56,5 @@ Read [SPEC.md](SPEC.md).
 
 [releases]: https://github.com/cybozu-go/log/releases
 [logfmt]: https://brandur.org/logfmt
-[jsonl]: http://jsonlines.org/
+[jsonl]: https://jsonlines.org/
 [golog]: https://golang.org/pkg/log/

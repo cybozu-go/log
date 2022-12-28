@@ -13,7 +13,7 @@ import (
 
 // JSONFormat implements Formatter for JSON Lines.
 //
-// http://jsonlines.org/
+// https://jsonlines.org/
 type JSONFormat struct {
 	// Utsname can normally be left blank.
 	// If not empty, the string is used instead of the hostname.
