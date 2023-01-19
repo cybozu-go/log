@@ -1,7 +1,7 @@
 package log
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 )
 
@@ -16,7 +16,7 @@ func makeFields() map[string]interface{} {
 
 func BenchmarkPlain(b *testing.B) {
 	l := NewLogger()
-	l.SetOutput(ioutil.Discard)
+	l.SetOutput(io.Discard)
 	l.SetFormatter(PlainFormat{})
 	fields := makeFields()
 
@@ -28,7 +28,7 @@ func BenchmarkPlain(b *testing.B) {
 
 func BenchmarkLogfmt(b *testing.B) {
 	l := NewLogger()
-	l.SetOutput(ioutil.Discard)
+	l.SetOutput(io.Discard)
 	l.SetFormatter(Logfmt{})
 	fields := makeFields()
 
@@ -40,7 +40,7 @@ func BenchmarkLogfmt(b *testing.B) {
 
 func BenchmarkJSON(b *testing.B) {
 	l := NewLogger()
-	l.SetOutput(ioutil.Discard)
+	l.SetOutput(io.Discard)
 	l.SetFormatter(JSONFormat{})
 	fields := makeFields()
 

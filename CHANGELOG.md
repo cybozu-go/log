@@ -5,6 +5,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Fix for deprecated "io/ioutil" in [#39](https://github.com/cybozu-go/log/pull/39)
+
 ## [1.6.1] - 2021-12-14
 ### Changed
 - Remove dependency on [github.com/pkg/errors](https://github.com/pkg/errors) (#28).
