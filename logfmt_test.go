@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -17,56 +18,74 @@ const (
 func TestAppendLogfmt(t *testing.T) {
 	t.Parallel()
 
-	b := make([]byte, 0, 4096)
-	b, _ = appendLogfmt(b, nil)
+	buf := make([]byte, 0, 4096)
+
+	b, _ := appendLogfmt(buf, nil)
 	if string(b) != "null" {
 		t.Error(string(b) + " != null")
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, 100)
+	b, _ = appendLogfmt(buf, 100)
 	if string(b) != "100" {
 		t.Error(string(b) + " != 100")
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, false)
+	b, _ = appendLogfmt(buf, false)
 	if string(b) != "false" {
 		t.Error(string(b) + " != false")
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, true)
+	b, _ = appendLogfmt(buf, true)
 	if string(b) != "true" {
 		t.Error(string(b) + " != true")
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, `"abc `)
+	b, _ = appendLogfmt(buf, `"abc `)
 	if string(b) != `"\"abc "` {
 		t.Error(string(b) + ` != "\"abc "`)
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, []int{-100, 100, 20000})
-	if string(b) != `[-100 100 20000]` {
-		t.Error("failed to format int list")
+	b, _ = appendLogfmt(buf, float32(3.14159))
+	if string(b) != "3.14159" {
+		t.Error(string(b) + ` != "3.14159"`)
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, []int64{-100, 100, 20000})
-	if string(b) != `[-100 100 20000]` {
-		t.Error("failed to format int64 list")
+	b, _ = appendLogfmt(buf, 3.14159)
+	if string(b) != "3.14159" {
+		t.Error(string(b) + ` != "3.14159"`)
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, []string{"abc", "def"})
+	b, _ = appendLogfmt(buf, math.NaN())
+	if string(b) != "NaN" {
+		t.Error(string(b) + ` != "NaN"`)
+	}
+
+	b, _ = appendLogfmt(buf, math.Inf(1))
+	if string(b) != "+Inf" {
+		t.Error(string(b) + ` != "+Inf"`)
+	}
+
+	b, _ = appendLogfmt(buf, math.Inf(-1))
+	if string(b) != "-Inf" {
+		t.Error(string(b) + ` != "-Inf"`)
+	}
+
+	b, _ = appendLogfmt(buf, []int{-100, 100, 20000})
+	if string(b) != "[-100 100 20000]" {
+		t.Error(string(b) + ` != "[-100 100 20000]"`)
+	}
+
+	b, _ = appendLogfmt(buf, []int64{-100, 100, 20000})
+	if string(b) != "[-100 100 20000]" {
+		t.Error(string(b) + ` != "[-100 100 20000]"`)
+	}
+
+	b, _ = appendLogfmt(buf, []string{"abc", "def"})
 	if string(b) != `["abc" "def"]` {
-		t.Error("failed to format string list")
+		t.Error(string(b) + ` != ["abc" "def"]`)
 	}
 
-	b = b[:0]
-	b, _ = appendLogfmt(b, map[string]interface{}{
+	b, _ = appendLogfmt(buf, map[string]interface{}{
 		"abc":     123,
 		"def ghi": nil,
 	})
@@ -76,8 +95,7 @@ func TestAppendLogfmt(t *testing.T) {
 	}
 
 	invalidUtf8 := "hello" + string([]byte{0x80})
-	b = b[:0]
-	b, err := appendLogfmt(b, invalidUtf8)
+	b, err := appendLogfmt(buf, invalidUtf8)
 	if err != nil {
 		t.Error(err)
 	} else {
@@ -92,8 +110,7 @@ func TestAppendLogfmt(t *testing.T) {
 		}
 	}
 
-	b = b[:0]
-	b, err = appendLogfmt(b, fmt.Errorf(invalidUtf8))
+	b, err = appendLogfmt(buf, fmt.Errorf(invalidUtf8))
 	if err != nil {
 		t.Error(err)
 	} else {

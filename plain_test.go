@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -15,17 +16,52 @@ func TestAppendPlain(t *testing.T) {
 
 	b, _ := appendPlain(buf, nil)
 	if string(b) != "null" {
-		t.Error(`string(b) != "null"`)
+		t.Error(string(b) + ` != "null"`)
+	}
+
+	b, _ = appendLogfmt(buf, 100)
+	if string(b) != "100" {
+		t.Error(string(b) + " != 100")
+	}
+
+	b, _ = appendPlain(buf, false)
+	if string(b) != "false" {
+		t.Error(string(b) + ` != "false"`)
 	}
 
 	b, _ = appendPlain(buf, true)
 	if string(b) != "true" {
-		t.Error(`string(b) != "true"`)
+		t.Error(string(b) + ` != "true"`)
 	}
 
 	b, _ = appendPlain(buf, int16(-12345))
 	if string(b) != "-12345" {
-		t.Error(`string(b) != "-12345"`)
+		t.Error(string(b) + ` != "-12345"`)
+	}
+
+	b, _ = appendPlain(buf, float32(3.14159))
+	if string(b) != "3.14159" {
+		t.Error(string(b) + ` != "3.14159"`)
+	}
+
+	b, _ = appendPlain(buf, 3.14159)
+	if string(b) != "3.14159" {
+		t.Error(string(b) + ` != "3.14159"`)
+	}
+
+	b, _ = appendPlain(buf, math.NaN())
+	if string(b) != "NaN" {
+		t.Error(string(b) + ` != "NaN"`)
+	}
+
+	b, _ = appendPlain(buf, math.Inf(1))
+	if string(b) != "+Inf" {
+		t.Error(string(b) + ` != "+Inf"`)
+	}
+
+	b, _ = appendPlain(buf, math.Inf(-1))
+	if string(b) != "-Inf" {
+		t.Error(string(b) + ` != "-Inf"`)
 	}
 
 	b, err := appendPlain(buf, []string{"abc", "def"})
