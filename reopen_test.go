@@ -6,7 +6,6 @@ package log
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"syscall"
 	"testing"
@@ -60,14 +59,14 @@ func TestReopenWriter(t *testing.T) {
 func TestFileReopener(t *testing.T) {
 	t.Parallel()
 
-	f, err := ioutil.TempFile("", "gotest")
+	f, err := os.CreateTemp("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.Close()
 	defer os.Remove(f.Name())
 
-	g, err := ioutil.TempFile("", "gotest")
+	g, err := os.CreateTemp("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +95,7 @@ func TestFileReopener(t *testing.T) {
 	syscall.Kill(os.Getpid(), syscall.SIGUSR2)
 	time.Sleep(100 * time.Millisecond)
 
-	if hoge, err := ioutil.ReadFile(g.Name()); err != nil {
+	if hoge, err := os.ReadFile(g.Name()); err != nil {
 		t.Error(err)
 	} else {
 		if !bytes.Contains(hoge, []byte("hoge")) {
@@ -107,7 +106,7 @@ func TestFileReopener(t *testing.T) {
 		}
 	}
 
-	if fuga, err := ioutil.ReadFile(f.Name()); err != nil {
+	if fuga, err := os.ReadFile(f.Name()); err != nil {
 		t.Error(err)
 	} else {
 		if bytes.Contains(fuga, []byte("hoge")) {
@@ -122,7 +121,7 @@ func TestFileReopener(t *testing.T) {
 func TestFileReopenerCorrection(t *testing.T) {
 	t.Parallel()
 
-	f, err := ioutil.TempFile("", "gotest")
+	f, err := os.CreateTemp("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +132,7 @@ func TestFileReopenerCorrection(t *testing.T) {
 	f.Close()
 	defer os.Remove(f.Name())
 
-	g, err := ioutil.TempFile("", "gotest")
+	g, err := os.CreateTemp("", "gotest")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +159,7 @@ func TestFileReopenerCorrection(t *testing.T) {
 	syscall.Kill(os.Getpid(), syscall.SIGHUP)
 	time.Sleep(100 * time.Millisecond)
 
-	if hoge, err := ioutil.ReadFile(g.Name()); err != nil {
+	if hoge, err := os.ReadFile(g.Name()); err != nil {
 		t.Error(err)
 	} else {
 		if !bytes.HasPrefix(hoge, []byte("abc\n")) {
@@ -168,7 +167,7 @@ func TestFileReopenerCorrection(t *testing.T) {
 		}
 	}
 
-	if fuga, err := ioutil.ReadFile(f.Name()); err != nil {
+	if fuga, err := os.ReadFile(f.Name()); err != nil {
 		t.Error(err)
 	} else {
 		if bytes.HasPrefix(fuga, []byte("\n")) {

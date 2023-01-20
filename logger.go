@@ -50,12 +50,13 @@ type Logger struct {
 // NewLogger constructs a new Logger struct.
 //
 // Attributes are initialized as follows:
-//    Topic:        path.Base(os.Args[0])
-//    Threshold:    LvInfo
-//    Formatter:    PlainFormat
-//    Output:       os.Stderr
-//    Defaults:     nil
-//    ErrorHandler: os.Exit(5) on EPIPE.
+//
+//	Topic:        path.Base(os.Args[0])
+//	Threshold:    LvInfo
+//	Formatter:    PlainFormat
+//	Output:       os.Stderr
+//	Defaults:     nil
+//	ErrorHandler: os.Exit(5) on EPIPE.
 func NewLogger() *Logger {
 	l := &Logger{
 		output: os.Stderr,
@@ -119,11 +120,11 @@ func (l *Logger) Threshold() int {
 // Enabled returns true if the log for the given level will be logged.
 // This can be used to avoid futile computation for logs being ignored.
 //
-//    if log.Enabled(log.LvDebug) {
-//        log.Debug("message", map[string]interface{}{
-//            "debug info": "...",
-//        })
-//    }
+//	if log.Enabled(log.LvDebug) {
+//	    log.Debug("message", map[string]interface{}{
+//	        "debug info": "...",
+//	    })
+//	}
 func (l *Logger) Enabled(level int) bool {
 	return level <= l.Threshold()
 }

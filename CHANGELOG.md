@@ -5,13 +5,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Fix for deprecated "io/ioutil" in [#39](https://github.com/cybozu-go/log/pull/39)
+
 ## [1.6.1] - 2021-12-14
 ### Changed
-- Remove dependency on [github.com/pkg/errors](https://github.com/pkg/errors) (#28).
+- Remove dependency on [github.com/pkg/errors](https://github.com/pkg/errors) ([#28](https://github.com/cybozu-go/log/pull/28)).
 
 ## [1.6.0] - 2020-03-19
 ### Changed
-- Validate string with strings.ToValidUTF8 (#26).
+- Validate string with strings.ToValidUTF8 ([#26](https://github.com/cybozu-go/log/pull/26)).
 
 ## [1.5.0] - 2018-09-14
 ### Added
@@ -19,18 +22,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.4.2] - 2017-09-07
 ### Changed
-- Fix a bug in `Logger.Writer` (#16).
+- Fix a bug in `Logger.Writer` ([#16](https://github.com/cybozu-go/log/pull/16)).
 
 ## [1.4.1] - 2017-05-08
 ### Changed
-- Call error handler in `Logger.WriteThrough` (#13).
+- Call error handler in `Logger.WriteThrough` ([#13](https://github.com/cybozu-go/log/pull/13)).
 
 ## [1.4.0] - 2017-04-28
 ### Added
 - `Logger.SetErrorHandler` to change error handler function.
 
 ### Changed
-- Logger has a default error handler that exits with status 5 on EPIPE (#11).
+- Logger has a default error handler that exits with status 5 on EPIPE ([#11](https://github.com/cybozu-go/log/pull/11)).
 
 ## [1.3.0] - 2016-09-10
 ### Changed
