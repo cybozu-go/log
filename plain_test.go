@@ -15,53 +15,53 @@ func TestAppendPlain(t *testing.T) {
 	buf := make([]byte, 0, 4096)
 
 	b, _ := appendPlain(buf, nil)
-	if string(b) != "null" {
-		t.Error(string(b) + ` != "null"`)
+	if got, want := string(b), "null"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, 100)
-	if string(b) != "100" {
-		t.Error(string(b) + " != 100")
+	if got, want := string(b), "100"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, false)
-	if string(b) != "false" {
-		t.Error(string(b) + ` != "false"`)
+	if got, want := string(b), "false"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, true)
-	if string(b) != "true" {
-		t.Error(string(b) + ` != "true"`)
+	if got, want := string(b), "true"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, int16(-12345))
-	if string(b) != "-12345" {
-		t.Error(string(b) + ` != "-12345"`)
+	if got, want := string(b), "-12345"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, float32(3.14159))
-	if string(b) != "3.14159" {
-		t.Error(string(b) + ` != "3.14159"`)
+	if got, want := string(b), "3.14159"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, 3.14159)
-	if string(b) != "3.14159" {
-		t.Error(string(b) + ` != "3.14159"`)
+	if got, want := string(b), "3.14159"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, math.NaN())
-	if string(b) != "NaN" {
-		t.Error(string(b) + ` != "NaN"`)
+	if got, want := string(b), "NaN"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, math.Inf(1))
-	if string(b) != "+Inf" {
-		t.Error(string(b) + ` != "+Inf"`)
+	if got, want := string(b), "+Inf"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendPlain(buf, math.Inf(-1))
-	if string(b) != "-Inf" {
-		t.Error(string(b) + ` != "-Inf"`)
+	if got, want := string(b), "-Inf"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, err := appendPlain(buf, []string{"abc", "def"})
@@ -144,8 +144,8 @@ func TestPlainFormat1(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testPlainLog1 {
-			t.Error(string(buf) + " != " + testPlainLog1)
+		if got, want := string(buf), testPlainLog1; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 }
@@ -164,8 +164,8 @@ func TestPlainFormat2(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testPlainLog2 {
-			t.Error(string(buf) + " != " + testPlainLog2)
+		if got, want := string(buf), testPlainLog2; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 
@@ -176,8 +176,8 @@ func TestPlainFormat2(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testPlainLog3 {
-			t.Error(string(buf) + " != " + testPlainLog3)
+		if got, want := string(buf), testPlainLog3; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 }
@@ -200,8 +200,8 @@ func TestPlainFormat3(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testPlainLog4 {
-			t.Error(string(buf) + " != " + testPlainLog4)
+		if got, want := string(buf), testPlainLog4; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 }

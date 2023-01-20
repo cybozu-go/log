@@ -21,68 +21,68 @@ func TestAppendLogfmt(t *testing.T) {
 	buf := make([]byte, 0, 4096)
 
 	b, _ := appendLogfmt(buf, nil)
-	if string(b) != "null" {
-		t.Error(string(b) + " != null")
+	if got, want := string(b), "null"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, 100)
-	if string(b) != "100" {
-		t.Error(string(b) + " != 100")
+	if got, want := string(b), "100"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, false)
-	if string(b) != "false" {
-		t.Error(string(b) + " != false")
+	if got, want := string(b), "false"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, true)
-	if string(b) != "true" {
-		t.Error(string(b) + " != true")
+	if got, want := string(b), "true"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, `"abc `)
-	if string(b) != `"\"abc "` {
-		t.Error(string(b) + ` != "\"abc "`)
+	if got, want := string(b), `"\"abc "`; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, float32(3.14159))
-	if string(b) != "3.14159" {
-		t.Error(string(b) + ` != "3.14159"`)
+	if got, want := string(b), "3.14159"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, 3.14159)
-	if string(b) != "3.14159" {
-		t.Error(string(b) + ` != "3.14159"`)
+	if got, want := string(b), "3.14159"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, math.NaN())
-	if string(b) != "NaN" {
-		t.Error(string(b) + ` != "NaN"`)
+	if got, want := string(b), "NaN"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, math.Inf(1))
-	if string(b) != "+Inf" {
-		t.Error(string(b) + ` != "+Inf"`)
+	if got, want := string(b), "+Inf"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, math.Inf(-1))
-	if string(b) != "-Inf" {
-		t.Error(string(b) + ` != "-Inf"`)
+	if got, want := string(b), "-Inf"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, []int{-100, 100, 20000})
-	if string(b) != "[-100 100 20000]" {
-		t.Error(string(b) + ` != "[-100 100 20000]"`)
+	if got, want := string(b), "[-100 100 20000]"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, []int64{-100, 100, 20000})
-	if string(b) != "[-100 100 20000]" {
-		t.Error(string(b) + ` != "[-100 100 20000]"`)
+	if got, want := string(b), "[-100 100 20000]"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, []string{"abc", "def"})
-	if string(b) != `["abc" "def"]` {
-		t.Error(string(b) + ` != ["abc" "def"]`)
+	if got, want := string(b), `["abc" "def"]`; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 
 	b, _ = appendLogfmt(buf, map[string]interface{}{
@@ -139,8 +139,8 @@ func TestLogfmt1(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testLog1 {
-			t.Error(string(buf) + " != " + testLog1)
+		if got, want := string(buf), testLog1; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 
@@ -150,8 +150,8 @@ func TestLogfmt1(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testLog1 {
-			t.Error(string(buf) + " != " + testLog1)
+		if got, want := string(buf), testLog1; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 }
@@ -170,8 +170,8 @@ func TestLogfmt2(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", nil); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testLog2 {
-			t.Error(string(buf) + " != " + testLog2)
+		if got, want := string(buf), testLog2; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 
@@ -182,8 +182,8 @@ func TestLogfmt2(t *testing.T) {
 	if buf, err := f.Format(b, l, ts, LvDebug, "test message", fields); err != nil {
 		t.Error(err)
 	} else {
-		if string(buf) != testLog3 {
-			t.Error(string(buf) + " != " + testLog3)
+		if got, want := string(buf), testLog3; got != want {
+			t.Errorf("got %q, want %q", got, want)
 		}
 	}
 }
