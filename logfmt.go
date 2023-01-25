@@ -59,7 +59,7 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 			return nil, ErrInvalidKey
 		}
 
-		if cap(buf) < (len(k) + 2) {
+		if cap(buf)-len(buf) < (len(k) + 2) {
 			return nil, ErrTooLarge
 		}
 		buf = append(buf, ' ')
@@ -76,7 +76,7 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 			continue
 		}
 
-		if cap(buf) < (len(k) + 2) {
+		if cap(buf)-len(buf) < (len(k) + 2) {
 			return nil, ErrTooLarge
 		}
 		buf = append(buf, ' ')
@@ -88,7 +88,7 @@ func (f Logfmt) Format(buf []byte, l *Logger, t time.Time, severity int,
 		}
 	}
 
-	if cap(buf) < 1 {
+	if cap(buf)-len(buf) < 1 {
 		return nil, ErrTooLarge
 	}
 	return append(buf, '\n'), nil
@@ -99,88 +99,88 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 
 	switch t := v.(type) {
 	case nil:
-		if cap(buf) < 4 {
+		if cap(buf)-len(buf) < 4 {
 			return nil, ErrTooLarge
 		}
 		return append(buf, "null"...), nil
 	case bool:
-		if cap(buf) < 5 { // len("false")
+		if cap(buf)-len(buf) < 5 { // len("false")
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendBool(buf, t), nil
 	case time.Time:
 		// len("2006-01-02T15:04:05.000000Z07:00")
-		if cap(buf) < 32 {
+		if cap(buf)-len(buf) < 32 {
 			return nil, ErrTooLarge
 		}
 		return t.UTC().AppendFormat(buf, RFC3339Micro), nil
 	case int:
 		// len("-9223372036854775807")
-		if cap(buf) < 20 {
+		if cap(buf)-len(buf) < 20 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendInt(buf, int64(t), 10), nil
 	case int8:
 		// len("-128")
-		if cap(buf) < 4 {
+		if cap(buf)-len(buf) < 4 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendInt(buf, int64(t), 10), nil
 	case int16:
 		// len("-32768")
-		if cap(buf) < 6 {
+		if cap(buf)-len(buf) < 6 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendInt(buf, int64(t), 10), nil
 	case int32:
 		// len("-2147483648")
-		if cap(buf) < 11 {
+		if cap(buf)-len(buf) < 11 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendInt(buf, int64(t), 10), nil
 	case int64:
 		// len("-9223372036854775807")
-		if cap(buf) < 20 {
+		if cap(buf)-len(buf) < 20 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendInt(buf, t, 10), nil
 	case uint:
 		// len("18446744073709551615")
-		if cap(buf) < 20 {
+		if cap(buf)-len(buf) < 20 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendUint(buf, uint64(t), 10), nil
 	case uint8:
 		// len("255")
-		if cap(buf) < 3 {
+		if cap(buf)-len(buf) < 3 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendUint(buf, uint64(t), 10), nil
 	case uint16:
 		// len("65535")
-		if cap(buf) < 5 {
+		if cap(buf)-len(buf) < 5 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendUint(buf, uint64(t), 10), nil
 	case uint32:
 		// len("4294967295")
-		if cap(buf) < 10 {
+		if cap(buf)-len(buf) < 10 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendUint(buf, uint64(t), 10), nil
 	case uint64:
 		// len("18446744073709551615")
-		if cap(buf) < 20 {
+		if cap(buf)-len(buf) < 20 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendUint(buf, t, 10), nil
 	case float32:
-		if cap(buf) < 256 {
+		if cap(buf)-len(buf) < 256 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendFloat(buf, float64(t), 'f', -1, 32), nil
 	case float64:
-		if cap(buf) < 256 {
+		if cap(buf)-len(buf) < 256 {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendFloat(buf, t, 'f', -1, 64), nil
@@ -189,8 +189,11 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 			// the next line replaces invalid characters.
 			t = strings.ToValidUTF8(t, string(utf8.RuneError))
 		}
-		// escaped length = 2*len(t) + 2 double quotes
-		if cap(buf) < (len(t)*2 + 2) {
+		// escaped length = 4*len(t) + 2 double quotes
+		// worst case: "\x00" -> `"\x00"`
+		// output of `"\uHHHH"` is not worst because 2-byte input is necessary; ratio is 6/2
+		// output of `"\UHHHHHHHH"` is not worst because 4-byte input is necessary; ratio is 10/4
+		if cap(buf)-len(buf) < (len(t)*4 + 2) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, t), nil
@@ -200,7 +203,8 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		if cap(buf) < (len(s)*2 + 2) {
+		// escaped length = 4*len(s) + 2 double quotes
+		if cap(buf)-len(buf) < (len(s)*4 + 2) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, string(s)), nil
@@ -210,8 +214,8 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 			// the next line replaces invalid characters.
 			s = strings.ToValidUTF8(s, string(utf8.RuneError))
 		}
-		// escaped length = 2*len(s) + 2 double quotes
-		if cap(buf) < (len(s)*2 + 2) {
+		// escaped length = 4*len(s) + 2 double quotes
+		if cap(buf)-len(buf) < (len(s)*4 + 2) {
 			return nil, ErrTooLarge
 		}
 		return strconv.AppendQuote(buf, s), nil
@@ -223,21 +227,21 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 
 	// string-keyed maps
 	if kind == reflect.Map && typ.Key().Kind() == reflect.String {
-		if cap(buf) < 1 {
+		if cap(buf)-len(buf) < 1 {
 			return nil, ErrTooLarge
 		}
 		buf = append(buf, '{')
 		first := true
 		for iter := value.MapRange(); iter.Next(); {
 			if !first {
-				if cap(buf) < 1 {
+				if cap(buf)-len(buf) < 1 {
 					return nil, ErrTooLarge
 				}
 				buf = append(buf, ' ')
 			}
 			key := iter.Key().String()
 			if regexpValidKey.MatchString(key) {
-				if cap(buf) < len(key) {
+				if cap(buf)-len(buf) < len(key) {
 					return nil, ErrTooLarge
 				}
 				buf = append(buf, key...)
@@ -247,7 +251,7 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 					return nil, err
 				}
 			}
-			if cap(buf) < 1 {
+			if cap(buf)-len(buf) < 1 {
 				return nil, ErrTooLarge
 			}
 			buf = append(buf, '=')
@@ -257,7 +261,7 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 			}
 			first = false
 		}
-		if cap(buf) < 1 {
+		if cap(buf)-len(buf) < 1 {
 			return nil, ErrTooLarge
 		}
 		return append(buf, '}'), nil
@@ -265,14 +269,14 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 
 	// slices and arrays
 	if kind == reflect.Slice || kind == reflect.Array {
-		if cap(buf) < 1 {
+		if cap(buf)-len(buf) < 1 {
 			return nil, ErrTooLarge
 		}
 		buf = append(buf, '[')
 		first := true
 		for i := 0; i < value.Len(); i++ {
 			if !first {
-				if cap(buf) < 1 {
+				if cap(buf)-len(buf) < 1 {
 					return nil, ErrTooLarge
 				}
 				buf = append(buf, ' ')
@@ -283,7 +287,7 @@ func appendLogfmt(buf []byte, v interface{}) ([]byte, error) {
 			}
 			first = false
 		}
-		if cap(buf) < 1 {
+		if cap(buf)-len(buf) < 1 {
 			return nil, ErrTooLarge
 		}
 		return append(buf, ']'), nil

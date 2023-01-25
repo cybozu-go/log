@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"math"
 	"reflect"
 	"testing"
@@ -222,5 +223,13 @@ func TestJSONFormat(t *testing.T) {
 		if got, want := v.(string), `a", b, c`; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
+	}
+
+	long_input := make([]byte, 4096)
+	_, err = f.Format(buf, l, ts, LvCritical, "baz", map[string]interface{}{
+		"key": long_input,
+	})
+	if !errors.Is(err, ErrTooLarge) {
+		t.Errorf("got: %#v, want: %#v", err, ErrTooLarge)
 	}
 }

@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -19,7 +20,7 @@ func TestAppendPlain(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 
-	b, _ = appendLogfmt(buf, 100)
+	b, _ = appendPlain(buf, 100)
 	if got, want := string(b), "100"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -122,6 +123,13 @@ func TestAppendPlain(t *testing.T) {
 		}
 	}
 
+	input := "\x00\x00\x00\x00"
+	expected := `"\x00\x00\x00\x00"`
+	buf = make([]byte, 1, len(expected))
+	_, err = appendPlain(buf, input)
+	if !errors.Is(err, ErrTooLarge) {
+		t.Errorf("got: %#v, want: %#v", err, ErrTooLarge)
+	}
 }
 
 const (

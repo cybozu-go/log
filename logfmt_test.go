@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -123,6 +124,14 @@ func TestAppendLogfmt(t *testing.T) {
 		if !bytes.Contains(b, []byte("hello")) {
 			t.Error(`!bytes.Contains(b, "hello")`)
 		}
+	}
+
+	input := "\x00\x00\x00\x00"
+	expected := `"\x00\x00\x00\x00"`
+	buf = make([]byte, 1, len(expected))
+	_, err = appendLogfmt(buf, input)
+	if !errors.Is(err, ErrTooLarge) {
+		t.Errorf("got: %#v, want: %#v", err, ErrTooLarge)
 	}
 }
 
