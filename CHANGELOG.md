@@ -5,8 +5,19 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2023-02-01
 ### Changed
+- Improve performance of map iteration using reflect.MapIter in [#34](https://github.com/cybozu-go/log/pull/34)
+- Use buffered channel for signal.Notify in [#37](https://github.com/cybozu-go/log/pull/37)
 - Fix for deprecated "io/ioutil" in [#39](https://github.com/cybozu-go/log/pull/39)
+
+### Removed
+- Remove "Requirements" section from README in [#41](https://github.com/cybozu-go/log/pull/41)
+    - Please use the latest Go.
+
+### Fixed
+- Fix JSONFormat to ensure outputting JSON on NaN and Infinities in [#29](https://github.com/cybozu-go/log/pull/29)
+- Fix JSONFormat to output valid JSON strings in [#33](https://github.com/cybozu-go/log/pull/33)
 
 ## [1.6.1] - 2021-12-14
 ### Changed
@@ -69,7 +80,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - [Logger.Writer](https://godoc.org/github.com/cybozu-go/log#Logger.Writer) is rewritten for better performance.
 
-[Unreleased]: https://github.com/cybozu-go/log/compare/v1.6.1...HEAD
+[Unreleased]: https://github.com/cybozu-go/log/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/cybozu-go/log/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/cybozu-go/log/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/cybozu-go/log/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/cybozu-go/log/compare/v1.4.2...v1.5.0
