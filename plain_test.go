@@ -19,7 +19,7 @@ func TestAppendPlain(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 
-	b, _ = appendLogfmt(buf, 100)
+	b, _ = appendPlain(buf, 100)
 	if got, want := string(b), "100"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
