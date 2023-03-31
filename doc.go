@@ -1,6 +1,8 @@
 /*
 Package log provides the standard logging framework for cybozu products.
 
+Deprecated: This project has come to an end and will not receive any update.
+
 As this is a framework rather than a library, most features are hard-coded
 and non-customizable.
 
