@@ -6,6 +6,8 @@
 Logging framework for Go
 ========================
 
+**Deprecated: This project has come to an end and will not receive any update.**
+
 This is a logging framework mainly for our Go products.
 
 Be warned that this is a _framework_ rather than a library.
